@@ -122,9 +122,15 @@ foreach ($rows as $row) {
 
     $parent = str_replace(';', '', $row['parent_code'] ?? '');
 
+    $fmtQty          = number_format($qty, 2, ',', '');
+    $fmtUnitPrice    = number_format($unitPriceExcl, 2, ',', '');
+    $fmtAmount       = number_format($amountExcl, 2, ',', '');
+    $fmtDiscount     = number_format($discountExcl, 2, ',', '');
+    $fmtVat          = number_format($vatPct, 2, ',', '');
+
     $lines[] = implode(';', [
-        $dateStr, $timeStr, $code, $desc, $qty,
-        $unitPriceExcl, $amountExcl, $discountExcl, $vatPct, $parent,
+        $dateStr, $timeStr, $code, $desc, $fmtQty,
+        $fmtUnitPrice, $fmtAmount, $fmtDiscount, $fmtVat, $parent,
     ]);
 }
 
