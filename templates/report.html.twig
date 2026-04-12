@@ -134,6 +134,7 @@
                         <th class="text-left">Bill No</th>
                         <th class="text-left">Code</th>
                         <th class="text-left">Description</th>
+                        <th class="text-left">Department</th>
                         <th class="text-right">Qty</th>
                         <th class="text-right">Amount</th>
                         <th class="text-left">Parent</th>
@@ -205,6 +206,14 @@
                         },
                     },
                     { data: 'description' },
+                    {
+                        data: 'department',
+                        defaultContent: '',
+                        render: function (data) {
+                            if (!data) return '<span class="text-slate-300">—</span>';
+                            return data;
+                        },
+                    },
                     {
                         data: 'quantity',
                         className: 'text-right tabular-nums',

@@ -70,6 +70,7 @@ $sql = "
         sl.tax1Amount AS tax1Amount,
         item.code AS item_code,
         parentcode.code AS parent_code,
+        dept.name AS department_name,
         s.tax1 AS vat_percent
     FROM tbl_sales s
     JOIN tbl_invoices inv ON s.invoice_id = inv.id
@@ -87,6 +88,12 @@ $sql = "
         AND s.voidCheck = 0
         AND sl.quantity > 0
         AND (sl.unitPrice > 0 OR item.noReport = 0)
+        AND dept.name = 'Restaurant'
+        AND ROUND(
+            ((sl.quantity - sl.voidQuantity) * sl.unitPrice)
+            - sl.discountAmount + sl.serviceChargeAmount + sl.tax1Amount,
+            2
+        ) <> 0
     ORDER BY s.invoice_id, sl.id
 ";
 

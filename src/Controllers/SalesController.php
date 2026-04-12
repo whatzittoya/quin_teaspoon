@@ -22,6 +22,7 @@ class SalesController
             sl.tax1Amount AS tax1Amount,
             item.code AS item_code,
             parentcode.code AS parent_code,
+            dept.name AS department_name,
             s.tax1 AS vat_percent
         FROM tbl_sales s
         JOIN tbl_invoices inv ON s.invoice_id = inv.id
@@ -39,6 +40,12 @@ class SalesController
             AND s.voidCheck = 0
             AND sl.quantity > 0
             AND (sl.unitPrice > 0 OR item.noReport = 0)
+            AND dept.name = 'Restaurant'
+            AND ROUND(
+                ((sl.quantity - sl.voidQuantity) * sl.unitPrice)
+                - sl.discountAmount + sl.serviceChargeAmount + sl.tax1Amount,
+                2
+            ) <> 0
         ORDER BY s.invoice_id, sl.id
     ";
 
@@ -90,6 +97,7 @@ class SalesController
                 'bill_no' => (int) $row['invoice_id'],
                 'code' => $row['item_code'],
                 'description' => $row['description'],
+                'department' => $row['department_name'] ?? '',
                 'quantity' => (float) $row['quantity'],
                 'amount' => round((float) $row['revenue'], 2),
                 'parent' => $row['parent_code'],
