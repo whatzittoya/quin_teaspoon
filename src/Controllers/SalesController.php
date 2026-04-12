@@ -154,6 +154,11 @@ class SalesController
             $result['sftp_output'] = $sftpResult['output'];
             if ($sftpResult['exit_code'] !== 0) {
                 $result['error'] = 'SFTP upload failed';
+            } else {
+                // Mark sales as uploaded
+                $db = $request->getAttribute('container')->get('db');
+                $stmt = $db->prepare('UPDATE tbl_sales SET trobex = 1 WHERE date BETWEEN :from AND :to AND closed = 1 AND voidCheck = 0');
+                $stmt->execute(['from' => $date . ' 00:00:00', 'to' => $date . ' 23:59:59']);
             }
         } else {
             $result['sftp_output'] = 'Upload disabled — CSV saved locally only';

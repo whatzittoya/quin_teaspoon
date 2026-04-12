@@ -1,6 +1,6 @@
 @echo off
 REM QUINOS — Install Windows Task Scheduler job
-REM Runs daily at 22:00 (10 PM)
+REM Runs daily at 07:00 (10 PM)
 REM Run this script as Administrator
 
 set TASK_NAME=QuinosSalesUpload
@@ -8,10 +8,10 @@ set BAT_PATH=%~dp0run.bat
 
 echo Creating scheduled task "%TASK_NAME%"...
 echo Batch file: %BAT_PATH%
-echo Schedule: Daily at 22:00
+echo Schedule: Daily at 07:00
 echo.
 
-schtasks /Create /TN "%TASK_NAME%" /TR "\"%BAT_PATH%\"" /SC DAILY /ST 22:00 /F
+schtasks /Create /TN "%TASK_NAME%" /TR "\"%BAT_PATH%\"" /SC DAILY /ST 07:00 /F
 
 if %ERRORLEVEL% EQU 0 (
     echo.

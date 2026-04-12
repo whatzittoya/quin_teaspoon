@@ -223,4 +223,9 @@ EXPECT;
     echo date('Y-m-d H:i:s') . " [OK] Uploaded {$filename} via expect\n";
 }
 
+// Mark sales as uploaded (trobex = 1)
+$stmt = $db->prepare('UPDATE tbl_sales SET trobex = 1 WHERE date BETWEEN :from AND :to AND closed = 1 AND voidCheck = 0');
+$stmt->execute(['from' => $from, 'to' => $to]);
+echo date('Y-m-d H:i:s') . " [OK] Marked trobex = 1 for {$date}\n";
+
 echo date('Y-m-d H:i:s') . " [DONE] Sales upload complete\n";

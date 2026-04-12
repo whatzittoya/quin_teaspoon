@@ -67,7 +67,7 @@ class SchedulerController
         if ($exitCode !== 0) {
             // Task doesn't exist — create it
             $batPath = $this->getBatPath('run.bat');
-            $cmd = 'schtasks /Create /TN "' . self::TASK_NAME . '" /TR "\"' . $batPath . '\"" /SC DAILY /ST 22:00 /F 2>&1';
+            $cmd = 'schtasks /Create /TN "' . self::TASK_NAME . '" /TR "\"' . $batPath . '\"" /SC DAILY /ST 07:00 /F 2>&1';
             $createOutput = [];
             exec($cmd, $createOutput, $createExit);
 

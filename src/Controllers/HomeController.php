@@ -16,6 +16,7 @@ class HomeController
         $view = Twig::fromRequest($request);
         return $view->render($response, 'home.html.twig', [
             'name' => $_SESSION['user_name'],
+            'today' => date('Y-m-d'),
         ]);
     }
 }
