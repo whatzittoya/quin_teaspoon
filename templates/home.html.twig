@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUINOS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.tailwindcss.min.css">
+    <style>
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.875rem;
+            outline: none;
+        }
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: #38bdf8;
+        }
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_paginate {
+            font-size: 0.8rem;
+            color: #64748b;
+            padding: 0.75rem 0;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.25rem 0.6rem;
+            margin: 0 2px;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            color: #475569 !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #0284c7 !important;
+            color: #fff !important;
+            border: none;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+            border: none;
+        }
+        table.dataTable thead th {
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 500;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        table.dataTable tbody td {
+            border-bottom: 1px solid #f1f5f9;
+            padding: 0.65rem 1rem;
+            font-size: 0.875rem;
+        }
+        table.dataTable tbody tr:hover {
+            background: #f8fafc !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <span class="text-lg font-semibold text-slate-800">QUINOS</span>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-slate-500">{{ name }}</span>
+            <a href="/logout" class="text-sm text-slate-500 hover:text-slate-700">Sign out</a>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-4">
+            <h1 class="text-xl font-semibold text-slate-800">Sales Report</h1>
+            <div class="flex items-center gap-3">
+                <span class="text-sm text-slate-500">Auto Upload (22:00)</span>
+                <button id="scheduler-toggle" onclick="toggleScheduler()" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none" style="background:#cbd5e1">
+                    <span id="scheduler-dot" class="inline-block h-4 w-4 rounded-full bg-white transition-transform translate-x-1"></span>
+                </button>
+                <button onclick="showSchedulerLog()" class="text-xs text-slate-400 hover:text-slate-600" title="View log">Log</button>
+            </div>
+        </div>
+
+        <div id="scheduler-log" class="hidden mb-4 p-3 rounded-lg border border-slate-200 bg-slate-50">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-medium text-slate-500 uppercase">Scheduler Log</span>
+                <button onclick="$('#scheduler-log').addClass('hidden')" class="text-xs text-slate-400 hover:text-slate-600">Close</button>
+            </div>
+            <pre id="scheduler-log-content" class="text-xs text-slate-600 whitespace-pre-wrap max-h-40 overflow-y-auto">Loading...</pre>
+        </div>
+
+        <div id="upload-info" class="hidden mb-4 p-3 rounded-lg border text-sm"></div>
+
+        <div class="bg-white rounded-lg border border-slate-200 p-4">
+            <table id="sales-table" class="w-full">
+                <thead>
+                    <tr>
+                        <th class="text-left px-4 py-2">Date</th>
+                        <th class="text-right px-4 py-2">Sales</th>
+                        <th class="text-right px-4 py-2">Total</th>
+                        <th class="text-center px-4 py-2">Uploaded</th>
+                        <th class="px-4 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script>
+        function setToggleState(enabled) {
+            var $btn = $('#scheduler-toggle');
+            var $dot = $('#scheduler-dot');
+            if (enabled) {
+                $btn.css('background', '#0284c7');
+                $dot.css('transform', 'translateX(1.25rem)');
+            } else {
+                $btn.css('background', '#cbd5e1');
+                $dot.css('transform', 'translateX(0.25rem)');
+            }
+        }
+
+        function loadSchedulerStatus() {
+            $.get('/api/scheduler/status', function (res) {
+                setToggleState(res.enabled);
+            });
+        }
+
+        function toggleScheduler() {
+            $.post('/api/scheduler/toggle', function (res) {
+                setToggleState(res.enabled);
+            });
+        }
+
+        function showSchedulerLog() {
+            var $log = $('#scheduler-log');
+            $log.toggleClass('hidden');
+            if (!$log.hasClass('hidden')) {
+                $.get('/api/scheduler/status', function (res) {
+                    $('#scheduler-log-content').text(res.last_log || 'No log entries yet.');
+                });
+            }
+        }
+
+        function uploadSales(date, btn) {
+            var $btn = $(btn);
+            $btn.text('Uploading...').addClass('pointer-events-none opacity-50');
+
+            $.post('/api/sales/upload', { date: date }, function (res) {
+                var $info = $('#upload-info');
+                if (res.error) {
+                    $info.removeClass('hidden bg-sky-50 border-sky-200 text-sky-800')
+                         .addClass('bg-red-50 border-red-200 text-red-800')
+                         .html('<strong>Error:</strong> ' + res.error + '<br><pre class="mt-1 text-xs whitespace-pre-wrap">' + (res.sftp_output || '') + '</pre>')
+                         .show();
+                } else {
+                    $info.removeClass('hidden bg-red-50 border-red-200 text-red-800')
+                         .addClass('bg-sky-50 border-sky-200 text-sky-800')
+                         .html('<strong>' + res.file + '</strong> uploaded (' + res.rows + ' rows)<br><pre class="mt-1 text-xs whitespace-pre-wrap">' + res.sftp_output + '</pre>')
+                         .show();
+                }
+            }).fail(function (xhr) {
+                var msg = xhr.responseJSON ? xhr.responseJSON.error : 'Upload failed';
+                $('#upload-info')
+                    .removeClass('hidden bg-sky-50 border-sky-200 text-sky-800')
+                    .addClass('bg-red-50 border-red-200 text-red-800')
+                    .html('<strong>Error:</strong> ' + msg)
+                    .show();
+            }).always(function () {
+                $btn.text('Upload').removeClass('pointer-events-none opacity-50');
+            });
+        }
+
+        $(function () {
+            loadSchedulerStatus();
+
+            $('#sales-table').DataTable({
+                ajax: '/api/sales',
+                pageLength: 20,
+                order: [[0, 'desc']],
+                columns: [
+                    { data: 'date' },
+                    {
+                        data: 'sales',
+                        className: 'text-right',
+                    },
+                    {
+                        data: 'total',
+                        className: 'text-right',
+                        render: function (data) {
+                            return parseFloat(data).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            });
+                        },
+                    },
+                    {
+                        data: 'uploaded',
+                        className: 'text-center',
+                        render: function (data) {
+                            var color = data ? 'bg-green-500' : 'bg-slate-300';
+                            return '<span class="inline-block w-2 h-2 rounded-full ' + color + '"></span>';
+                        },
+                    },
+                    {
+                        data: 'date',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function (data) {
+                            return '<a href="/report?date=' + data + '" class="text-sky-600 hover:text-sky-800 text-xs font-medium mr-3">View</a>'
+                                 + '<button onclick="uploadSales(\'' + data + '\', this)" class="text-sky-600 hover:text-sky-800 text-xs font-medium">Upload</button>';
+                        },
+                    },
+                ],
+                language: {
+                    emptyTable: 'No sales found',
+                    search: '',
+                    searchPlaceholder: 'Search...',
+                },
+            });
+        });
+    </script>
+</body>
+</html>

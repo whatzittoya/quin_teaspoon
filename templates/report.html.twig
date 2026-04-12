@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUINOS - Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.tailwindcss.min.css">
+    <style>
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.875rem;
+            outline: none;
+        }
+        .dataTables_wrapper .dataTables_filter input:focus {
+            border-color: #38bdf8;
+        }
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_paginate {
+            font-size: 0.8rem;
+            color: #64748b;
+            padding: 0.75rem 0;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.25rem 0.6rem;
+            margin: 0 2px;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            color: #475569 !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #0284c7 !important;
+            color: #fff !important;
+            border: none;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #e2e8f0 !important;
+            color: #0f172a !important;
+            border: none;
+        }
+        table.dataTable thead th {
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 500;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        table.dataTable tbody td {
+            border-bottom: 1px solid #f1f5f9;
+            padding: 0.5rem 1rem;
+            font-size: 0.813rem;
+        }
+        table.dataTable tbody tr:hover {
+            background: #f8fafc !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <span class="text-lg font-semibold text-slate-800">QUINOS</span>
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-slate-500">{{ name }}</span>
+            <a href="/logout" class="text-sm text-slate-500 hover:text-slate-700">Sign out</a>
+        </div>
+    </nav>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <div class="flex items-center gap-3 mb-4">
+            <a href="/home" class="text-sm text-sky-600 hover:text-sky-800">&larr; Back</a>
+            <h1 class="text-xl font-semibold text-slate-800">Sales Report &mdash; {{ date }}</h1>
+        </div>
+
+        <div class="bg-white rounded-lg border border-slate-200 p-4">
+            <table id="report-table" class="w-full">
+                <thead>
+                    <tr>
+                        <th class="text-left px-4 py-2">Date</th>
+                        <th class="text-left px-4 py-2">Bill No</th>
+                        <th class="text-left px-4 py-2">Code</th>
+                        <th class="text-left px-4 py-2">Description</th>
+                        <th class="text-right px-4 py-2">Quantity</th>
+                        <th class="text-right px-4 py-2">Amount</th>
+                        <th class="text-left px-4 py-2">Parent</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script>
+        $(function () {
+            $('#report-table').DataTable({
+                ajax: '/api/sales/report?date={{ date }}',
+                pageLength: 20,
+                order: [[1, 'asc']],
+                columns: [
+                    { data: 'date' },
+                    { data: 'bill_no' },
+                    { data: 'code' },
+                    { data: 'description' },
+                    {
+                        data: 'quantity',
+                        className: 'text-right',
+                    },
+                    {
+                        data: 'amount',
+                        className: 'text-right',
+                        render: function (data) {
+                            return parseFloat(data).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            });
+                        },
+                    },
+                    {
+                        data: 'parent',
+                        defaultContent: '',
+                    },
+                ],
+                language: {
+                    emptyTable: 'No data found',
+                    search: '',
+                    searchPlaceholder: 'Search...',
+                },
+            });
+        });
+    </script>
+</body>
+</html>
