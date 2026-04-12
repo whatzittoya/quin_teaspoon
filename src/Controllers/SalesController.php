@@ -135,8 +135,11 @@ class SalesController
 
         $rand = substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 4);
         $filename = "sales-{$date}-{$rand}.csv";
-        $exportDir = dirname(__DIR__, 2) . '/exports';
-        $localPath = $exportDir . '/' . $filename;
+        $exportDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'exports';
+        if (!is_dir($exportDir)) {
+            mkdir($exportDir, 0755, true);
+        }
+        $localPath = $exportDir . DIRECTORY_SEPARATOR . $filename;
         file_put_contents($localPath, $csvContent);
 
         $result = [

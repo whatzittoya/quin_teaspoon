@@ -2,6 +2,7 @@
 REM QUINOS — Run daily sales upload
 REM Called by Windows Task Scheduler
 
+REM Adjust this path if PHP is installed elsewhere
 set PHP=C:\xampp\php\php.exe
 set SCRIPT=%~dp0upload_sales.php
 set LOG=%~dp0upload.log
