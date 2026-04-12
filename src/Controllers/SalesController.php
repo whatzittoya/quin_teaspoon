@@ -216,6 +216,24 @@ class SalesController
         $user = 'renew.bali';
         $pass = 'KprKuh1';
 
+        // Use phpseclib (works on both Windows and Linux)
+        if (class_exists('phpseclib3\\Net\\SFTP')) {
+            try {
+                $sftp = new \phpseclib3\Net\SFTP($host, $port);
+                if (!$sftp->login($user, $pass)) {
+                    return ['exit_code' => 1, 'output' => 'SFTP login failed'];
+                }
+                $sftp->chdir('uploads');
+                if (!$sftp->put($filename, $localPath, \phpseclib3\Net\SFTP::SOURCE_LOCAL_FILE)) {
+                    return ['exit_code' => 1, 'output' => 'SFTP put failed'];
+                }
+                return ['exit_code' => 0, 'output' => "Uploaded {$filename} to /uploads"];
+            } catch (\Exception $e) {
+                return ['exit_code' => 1, 'output' => 'SFTP error: ' . $e->getMessage()];
+            }
+        }
+
+        // Fallback: expect (Linux/Mac only)
         $expectScript = <<<EXPECT
 set timeout 30
 spawn sftp -o StrictHostKeyChecking=no -P {$port} {$user}@{$host}
