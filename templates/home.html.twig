@@ -249,6 +249,7 @@
                     showInfo('error', '<strong>Error:</strong> ' + res.error + '<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-red-100 rounded p-2">' + (res.sftp_output || '') + '</pre>');
                 } else {
                     showInfo('success', '<strong>' + res.file + '</strong> — ' + res.rows + ' rows<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-green-100 rounded p-2">' + res.sftp_output + '</pre>');
+                    $('#sales-table').DataTable().ajax.reload(null, false);
                 }
             }).fail(function (xhr) {
                 var msg = xhr.responseJSON ? xhr.responseJSON.error : 'Upload failed';
