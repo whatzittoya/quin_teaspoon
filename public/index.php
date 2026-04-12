@@ -48,6 +48,7 @@ $containerBuilder->addDefinitions([
 $container = $containerBuilder->build();
 AppFactory::setContainer($container);
 $app = AppFactory::create();
+$app->setBasePath('/sftp/public');
 
 // Routes
 require __DIR__ . '/../src/routes.php';
