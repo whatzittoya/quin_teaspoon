@@ -112,6 +112,31 @@ class SalesController
         ]);
     }
 
+    public function download(Request $request, Response $response): Response
+    {
+        if (empty($_SESSION['user_name'])) {
+            return $this->json($response, ['error' => 'Unauthorized'], 401);
+        }
+
+        $date = $request->getQueryParams()['date'] ?? '';
+        if (!$date) {
+            return $this->json($response, ['error' => 'Date required'], 400);
+        }
+
+        $rows = $this->fetchReport($request, $date);
+        if (empty($rows)) {
+            return $this->json($response, ['error' => 'No data for this date'], 400);
+        }
+
+        $csvContent = $this->buildCsv($rows);
+        $filename = "sales-{$date}.csv";
+
+        $response->getBody()->write($csvContent);
+        return $response
+            ->withHeader('Content-Type', 'text/csv; charset=utf-8')
+            ->withHeader('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
+
     public function upload(Request $request, Response $response): Response
     {
         if (empty($_SESSION['user_name'])) {

@@ -101,7 +101,7 @@
     <div class="max-w-7xl mx-auto px-6 py-8">
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <a href="/home" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300 transition">
+                <a href="{{ base_path }}/home" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300 transition">
                     <i class="fa-solid fa-arrow-left text-sm"></i>
                 </a>
                 <div>
@@ -111,9 +111,14 @@
                     </p>
                 </div>
             </div>
-            <button id="upload-btn" onclick="uploadDate()" class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
-                <i class="fa-solid fa-cloud-arrow-up text-xs"></i> Upload to SFTP
-            </button>
+            <div class="flex items-center gap-2">
+                <a href="{{ base_path }}/api/sales/download?date={{ date }}" class="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
+                    <i class="fa-solid fa-download text-xs"></i> Download CSV
+                </a>
+                <button id="upload-btn" onclick="uploadDate()" class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
+                    <i class="fa-solid fa-cloud-arrow-up text-xs"></i> Upload to SFTP
+                </button>
+            </div>
         </div>
 
         <div id="upload-info" class="hidden mb-4 p-4 rounded-lg border text-sm flex items-start gap-3">

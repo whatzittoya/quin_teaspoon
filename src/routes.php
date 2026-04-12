@@ -13,6 +13,7 @@ $app->get('/home', [HomeController::class, 'index']);
 
 $app->get('/api/sales', [SalesController::class, 'list']);
 $app->get('/api/sales/report', [SalesController::class, 'report']);
+$app->get('/api/sales/download', [SalesController::class, 'download']);
 $app->post('/api/sales/upload', [SalesController::class, 'upload']);
 $app->get('/report', [SalesController::class, 'reportPage']);
 
