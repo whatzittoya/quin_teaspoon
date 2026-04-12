@@ -10,8 +10,9 @@ class AuthController
 {
     public function loginPage(Request $request, Response $response): Response
     {
+        $base = $request->getAttribute('base_path');
         if (!empty($_SESSION['user_name'])) {
-            return $response->withHeader('Location', '/home')->withStatus(302);
+            return $response->withHeader('Location', $base . '/home')->withStatus(302);
         }
         $view = Twig::fromRequest($request);
         return $view->render($response, 'login.html.twig', [
@@ -21,13 +22,14 @@ class AuthController
 
     public function login(Request $request, Response $response): Response
     {
+        $base = $request->getAttribute('base_path');
         $data = $request->getParsedBody();
         $name = trim($data['name'] ?? '');
         $pin = trim($data['pin'] ?? '');
 
         if ($name === '' || $pin === '') {
             $_SESSION['login_error'] = 'Please fill in all fields.';
-            return $response->withHeader('Location', '/')->withStatus(302);
+            return $response->withHeader('Location', $base . '/')->withStatus(302);
         }
 
         $db = $this->db($request);
@@ -38,17 +40,18 @@ class AuthController
         if ($user && $user['pin'] === $pin) {
             unset($_SESSION['login_error']);
             $_SESSION['user_name'] = $user['name'];
-            return $response->withHeader('Location', '/home')->withStatus(302);
+            return $response->withHeader('Location', $base . '/home')->withStatus(302);
         }
 
         $_SESSION['login_error'] = 'Invalid name or PIN.';
-        return $response->withHeader('Location', '/')->withStatus(302);
+        return $response->withHeader('Location', $base . '/')->withStatus(302);
     }
 
     public function logout(Request $request, Response $response): Response
     {
+        $base = $request->getAttribute('base_path');
         session_destroy();
-        return $response->withHeader('Location', '/')->withStatus(302);
+        return $response->withHeader('Location', $base . '/')->withStatus(302);
     }
 
     private function db(Request $request): \PDO

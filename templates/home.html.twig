@@ -71,7 +71,7 @@
         <span class="text-lg font-semibold text-slate-800">QUINOS</span>
         <div class="flex items-center gap-4">
             <span class="text-sm text-slate-500">{{ name }}</span>
-            <a href="/logout" class="text-sm text-slate-500 hover:text-slate-700">Sign out</a>
+            <a href="{{ base_path }}/logout" class="text-sm text-slate-500 hover:text-slate-700">Sign out</a>
         </div>
     </nav>
 
@@ -116,6 +116,8 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>
+        var basePath = '{{ base_path }}';
+
         function setToggleState(enabled) {
             var $btn = $('#scheduler-toggle');
             var $dot = $('#scheduler-dot');
@@ -129,13 +131,13 @@
         }
 
         function loadSchedulerStatus() {
-            $.get('/api/scheduler/status', function (res) {
+            $.get(basePath + '/api/scheduler/status', function (res) {
                 setToggleState(res.enabled);
             });
         }
 
         function toggleScheduler() {
-            $.post('/api/scheduler/toggle', function (res) {
+            $.post(basePath + '/api/scheduler/toggle', function (res) {
                 setToggleState(res.enabled);
             });
         }
@@ -144,7 +146,7 @@
             var $log = $('#scheduler-log');
             $log.toggleClass('hidden');
             if (!$log.hasClass('hidden')) {
-                $.get('/api/scheduler/status', function (res) {
+                $.get(basePath + '/api/scheduler/status', function (res) {
                     $('#scheduler-log-content').text(res.last_log || 'No log entries yet.');
                 });
             }
@@ -154,7 +156,7 @@
             var $btn = $(btn);
             $btn.text('Uploading...').addClass('pointer-events-none opacity-50');
 
-            $.post('/api/sales/upload', { date: date }, function (res) {
+            $.post(basePath + '/api/sales/upload', { date: date }, function (res) {
                 var $info = $('#upload-info');
                 if (res.error) {
                     $info.removeClass('hidden bg-sky-50 border-sky-200 text-sky-800')
@@ -183,7 +185,7 @@
             loadSchedulerStatus();
 
             $('#sales-table').DataTable({
-                ajax: '/api/sales',
+                ajax: basePath + '/api/sales',
                 pageLength: 20,
                 order: [[0, 'desc']],
                 columns: [
@@ -216,7 +218,7 @@
                         searchable: false,
                         className: 'text-center',
                         render: function (data) {
-                            return '<a href="/report?date=' + data + '" class="text-sky-600 hover:text-sky-800 text-xs font-medium mr-3">View</a>'
+                            return '<a href="' + basePath + '/report?date=' + data + '" class="text-sky-600 hover:text-sky-800 text-xs font-medium mr-3">View</a>'
                                  + '<button onclick="uploadSales(\'' + data + '\', this)" class="text-sky-600 hover:text-sky-800 text-xs font-medium">Upload</button>';
                         },
                     },

@@ -71,13 +71,13 @@
         <span class="text-lg font-semibold text-slate-800">QUINOS</span>
         <div class="flex items-center gap-4">
             <span class="text-sm text-slate-500">{{ name }}</span>
-            <a href="/logout" class="text-sm text-slate-500 hover:text-slate-700">Sign out</a>
+            <a href="{{ base_path }}/logout" class="text-sm text-slate-500 hover:text-slate-700">Sign out</a>
         </div>
     </nav>
 
     <div class="max-w-6xl mx-auto px-4 py-8">
         <div class="flex items-center gap-3 mb-4">
-            <a href="/home" class="text-sm text-sky-600 hover:text-sky-800">&larr; Back</a>
+            <a href="{{ base_path }}/home" class="text-sm text-sky-600 hover:text-sky-800">&larr; Back</a>
             <h1 class="text-xl font-semibold text-slate-800">Sales Report &mdash; {{ date }}</h1>
         </div>
 
@@ -104,7 +104,7 @@
     <script>
         $(function () {
             $('#report-table').DataTable({
-                ajax: '/api/sales/report?date={{ date }}',
+                ajax: '{{ base_path }}/api/sales/report?date={{ date }}',
                 pageLength: 20,
                 order: [[1, 'asc']],
                 columns: [

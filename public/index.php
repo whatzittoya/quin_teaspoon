@@ -64,13 +64,15 @@ if ($basePath !== '') {
 // Routes
 require __DIR__ . '/../src/routes.php';
 
-// Inject container into request attributes for controllers
-$app->add(function ($request, $handler) use ($container) {
+// Inject container + base_path into request attributes for controllers
+$app->add(function ($request, $handler) use ($container, $basePath) {
     $request = $request->withAttribute('container', $container);
+    $request = $request->withAttribute('base_path', $basePath);
     return $handler->handle($request);
 });
 
 $twig = $container->get('view');
+$twig->getEnvironment()->addGlobal('base_path', $basePath);
 $app->add(TwigMiddleware::create($app, $twig));
 $app->addRoutingMiddleware();
 $app->addErrorMiddleware(true, true, true);
