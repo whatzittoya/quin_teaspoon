@@ -48,7 +48,18 @@ $containerBuilder->addDefinitions([
 $container = $containerBuilder->build();
 AppFactory::setContainer($container);
 $app = AppFactory::create();
-$app->setBasePath('/sftp/public');
+
+// Auto-detect base path (e.g. /sftp when running under C:\xampp\htdocs\sftp)
+$scriptName = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '');
+$scriptDir  = rtrim(str_replace('/index.php', '', $scriptName), '/');
+if ($scriptDir !== '' && str_ends_with($scriptDir, '/public')) {
+    $basePath = substr($scriptDir, 0, -7); // strip /public
+} else {
+    $basePath = $scriptDir;
+}
+if ($basePath !== '') {
+    $app->setBasePath($basePath);
+}
 
 // Routes
 require __DIR__ . '/../src/routes.php';
