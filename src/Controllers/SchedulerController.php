@@ -41,13 +41,30 @@ class SchedulerController
         }
 
         $file = $this->getEnabledFile();
+        $dir = dirname($file);
+
+        // Ensure scheduler directory exists
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
         $enabled = file_exists($file);
 
         if ($enabled) {
-            unlink($file);
+            if (!@unlink($file)) {
+                return $this->json($response, [
+                    'enabled' => true,
+                    'error' => 'Failed to delete .enabled file: ' . $file,
+                ]);
+            }
             $newState = false;
         } else {
-            file_put_contents($file, 'enabled');
+            if (file_put_contents($file, 'enabled') === false) {
+                return $this->json($response, [
+                    'enabled' => false,
+                    'error' => 'Failed to create .enabled file: ' . $file,
+                ]);
+            }
             $newState = true;
         }
 

@@ -6,22 +6,30 @@
     <title>QUINOS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.tailwindcss.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        body { font-family: 'Inter', sans-serif; }
         .dataTables_wrapper .dataTables_filter input {
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.875rem;
+            padding: 0.5rem 0.85rem 0.5rem 2.2rem;
+            font-size: 0.85rem;
             outline: none;
+            background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2394a3b8'%3E%3Cpath fill-rule='evenodd' d='M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat 0.65rem center;
+            background-size: 1rem;
+            transition: border-color 0.15s;
         }
         .dataTables_wrapper .dataTables_filter input:focus {
-            border-color: #38bdf8;
+            border-color: #0284c7;
+            background-color: #fff;
         }
         .dataTables_wrapper .dataTables_length select {
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
+            padding: 0.35rem 0.5rem;
+            font-size: 0.85rem;
         }
         .dataTables_wrapper .dataTables_info,
         .dataTables_wrapper .dataTables_length,
@@ -32,11 +40,12 @@
             padding: 0.75rem 0;
         }
         .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.25rem 0.6rem;
+            padding: 0.3rem 0.7rem;
             margin: 0 2px;
             border-radius: 0.375rem;
             font-size: 0.8rem;
             color: #475569 !important;
+            border: 1px solid transparent;
         }
         .dataTables_wrapper .dataTables_paginate .paginate_button.current {
             background: #0284c7 !important;
@@ -44,68 +53,126 @@
             border: none;
         }
         .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #e2e8f0 !important;
+            background: #f1f5f9 !important;
             color: #0f172a !important;
-            border: none;
+            border: 1px solid #e2e8f0;
         }
         table.dataTable thead th {
-            border-bottom: 1px solid #e2e8f0;
-            font-weight: 500;
-            color: #94a3b8;
-            font-size: 0.8rem;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            color: #64748b;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.05em;
+            padding: 0.75rem 1rem;
         }
         table.dataTable tbody td {
             border-bottom: 1px solid #f1f5f9;
-            padding: 0.65rem 1rem;
+            padding: 0.75rem 1rem;
             font-size: 0.875rem;
+            color: #334155;
         }
         table.dataTable tbody tr:hover {
             background: #f8fafc !important;
         }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-view {
+            background: #f0f9ff;
+            color: #0369a1;
+        }
+        .btn-view:hover {
+            background: #e0f2fe;
+        }
+        .btn-upload {
+            background: #f0fdf4;
+            color: #15803d;
+        }
+        .btn-upload:hover {
+            background: #dcfce7;
+        }
+        .btn-upload.loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
-    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <span class="text-lg font-semibold text-slate-800">QUINOS</span>
-        <div class="flex items-center gap-4">
-            <span class="text-sm text-slate-500">{{ name }}</span>
-            <a href="{{ base_path }}/logout" class="text-sm text-slate-500 hover:text-slate-700">Sign out</a>
+    <nav class="bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white text-sm font-bold">Q</span>
+                </div>
+                <span class="text-lg font-bold text-slate-800 tracking-tight">QUINOS</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-sm text-slate-500">
+                    <i class="fa-regular fa-user text-xs"></i>
+                    <span>{{ name }}</span>
+                </div>
+                <a href="{{ base_path }}/logout" class="text-sm text-slate-400 hover:text-red-500 transition">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
         </div>
     </nav>
 
-    <div class="max-w-4xl mx-auto px-4 py-8">
-        <div class="flex items-center justify-between mb-4">
-            <h1 class="text-xl font-semibold text-slate-800">Sales Report</h1>
-            <div class="flex items-center gap-3">
-                <span class="text-sm text-slate-500">Auto Upload (22:00)</span>
-                <button id="scheduler-toggle" onclick="toggleScheduler()" class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none" style="background:#cbd5e1">
-                    <span id="scheduler-dot" class="inline-block h-4 w-4 rounded-full bg-white transition-transform translate-x-1"></span>
+    <div class="max-w-6xl mx-auto px-6 py-8">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Sales Report</h1>
+                <p class="text-sm text-slate-400 mt-0.5">Daily sales summary</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2.5 bg-white border border-slate-200 rounded-lg px-3 py-2">
+                    <span class="text-xs text-slate-500 font-medium">Auto Upload 22:00</span>
+                    <button id="scheduler-toggle" onclick="toggleScheduler()" class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none" style="background:#cbd5e1">
+                        <span id="scheduler-dot" class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-0.5"></span>
+                    </button>
+                </div>
+                <button onclick="showSchedulerLog()" class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-500 hover:text-slate-700 hover:border-slate-300 transition" title="View log">
+                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Log
                 </button>
-                <button onclick="showSchedulerLog()" class="text-xs text-slate-400 hover:text-slate-600" title="View log">Log</button>
             </div>
         </div>
 
-        <div id="scheduler-log" class="hidden mb-4 p-3 rounded-lg border border-slate-200 bg-slate-50">
+        <div id="scheduler-log" class="hidden mb-4 p-4 rounded-lg border border-slate-200 bg-white">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-slate-500 uppercase">Scheduler Log</span>
-                <button onclick="$('#scheduler-log').addClass('hidden')" class="text-xs text-slate-400 hover:text-slate-600">Close</button>
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                    <i class="fa-solid fa-terminal mr-1"></i> Scheduler Log
+                </span>
+                <button onclick="$('#scheduler-log').addClass('hidden')" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <pre id="scheduler-log-content" class="text-xs text-slate-600 whitespace-pre-wrap max-h-40 overflow-y-auto">Loading...</pre>
+            <pre id="scheduler-log-content" class="text-xs text-slate-600 whitespace-pre-wrap max-h-40 overflow-y-auto bg-slate-50 rounded p-3 mt-2">Loading...</pre>
         </div>
 
-        <div id="upload-info" class="hidden mb-4 p-3 rounded-lg border text-sm"></div>
+        <div id="upload-info" class="hidden mb-4 p-4 rounded-lg border text-sm flex items-start gap-3">
+            <div id="upload-info-icon"></div>
+            <div id="upload-info-content" class="flex-1"></div>
+        </div>
 
-        <div class="bg-white rounded-lg border border-slate-200 p-4">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
             <table id="sales-table" class="w-full">
                 <thead>
                     <tr>
-                        <th class="text-left px-4 py-2">Date</th>
-                        <th class="text-right px-4 py-2">Sales</th>
-                        <th class="text-right px-4 py-2">Total</th>
-                        <th class="text-center px-4 py-2">Uploaded</th>
-                        <th class="px-4 py-2"></th>
+                        <th class="text-left">Date</th>
+                        <th class="text-right">Sales</th>
+                        <th class="text-right">Total</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -123,10 +190,10 @@
             var $dot = $('#scheduler-dot');
             if (enabled) {
                 $btn.css('background', '#0284c7');
-                $dot.css('transform', 'translateX(1.25rem)');
+                $dot.css('transform', 'translateX(1rem)');
             } else {
                 $btn.css('background', '#cbd5e1');
-                $dot.css('transform', 'translateX(0.25rem)');
+                $dot.css('transform', 'translateX(0.125rem)');
             }
         }
 
@@ -152,32 +219,41 @@
             }
         }
 
+        function showInfo(type, message) {
+            var $info = $('#upload-info');
+            var $icon = $('#upload-info-icon');
+            var $content = $('#upload-info-content');
+
+            $info.removeClass('hidden bg-sky-50 border-sky-200 bg-red-50 border-red-200 bg-green-50 border-green-200');
+            $content.removeClass('text-sky-800 text-red-800 text-green-800');
+
+            if (type === 'success') {
+                $info.addClass('bg-green-50 border-green-200');
+                $content.addClass('text-green-800');
+                $icon.html('<i class="fa-solid fa-circle-check text-green-500 mt-0.5"></i>');
+            } else {
+                $info.addClass('bg-red-50 border-red-200');
+                $content.addClass('text-red-800');
+                $icon.html('<i class="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>');
+            }
+            $content.html(message);
+        }
+
         function uploadSales(date, btn) {
             var $btn = $(btn);
-            $btn.text('Uploading...').addClass('pointer-events-none opacity-50');
+            $btn.addClass('loading').html('<i class="fa-solid fa-spinner fa-spin"></i> Uploading...');
 
             $.post(basePath + '/api/sales/upload', { date: date }, function (res) {
-                var $info = $('#upload-info');
                 if (res.error) {
-                    $info.removeClass('hidden bg-sky-50 border-sky-200 text-sky-800')
-                         .addClass('bg-red-50 border-red-200 text-red-800')
-                         .html('<strong>Error:</strong> ' + res.error + '<br><pre class="mt-1 text-xs whitespace-pre-wrap">' + (res.sftp_output || '') + '</pre>')
-                         .show();
+                    showInfo('error', '<strong>Error:</strong> ' + res.error + '<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-red-100 rounded p-2">' + (res.sftp_output || '') + '</pre>');
                 } else {
-                    $info.removeClass('hidden bg-red-50 border-red-200 text-red-800')
-                         .addClass('bg-sky-50 border-sky-200 text-sky-800')
-                         .html('<strong>' + res.file + '</strong> uploaded (' + res.rows + ' rows)<br><pre class="mt-1 text-xs whitespace-pre-wrap">' + res.sftp_output + '</pre>')
-                         .show();
+                    showInfo('success', '<strong>' + res.file + '</strong> — ' + res.rows + ' rows<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-green-100 rounded p-2">' + res.sftp_output + '</pre>');
                 }
             }).fail(function (xhr) {
                 var msg = xhr.responseJSON ? xhr.responseJSON.error : 'Upload failed';
-                $('#upload-info')
-                    .removeClass('hidden bg-sky-50 border-sky-200 text-sky-800')
-                    .addClass('bg-red-50 border-red-200 text-red-800')
-                    .html('<strong>Error:</strong> ' + msg)
-                    .show();
+                showInfo('error', '<strong>Error:</strong> ' + msg);
             }).always(function () {
-                $btn.text('Upload').removeClass('pointer-events-none opacity-50');
+                $btn.removeClass('loading').html('<i class="fa-solid fa-cloud-arrow-up"></i> Upload');
             });
         }
 
@@ -189,42 +265,52 @@
                 pageLength: 20,
                 order: [[0, 'desc']],
                 columns: [
-                    { data: 'date' },
+                    {
+                        data: 'date',
+                        render: function (data) {
+                            return '<span class="font-medium text-slate-700">' + data + '</span>';
+                        },
+                    },
                     {
                         data: 'sales',
                         className: 'text-right',
+                        render: function (data) {
+                            return '<span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-medium">' + data + '</span>';
+                        },
                     },
                     {
                         data: 'total',
                         className: 'text-right',
                         render: function (data) {
-                            return parseFloat(data).toLocaleString(undefined, {
+                            return '<span class="font-medium tabular-nums">' + parseFloat(data).toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
-                            });
+                            }) + '</span>';
                         },
                     },
                     {
                         data: 'uploaded',
                         className: 'text-center',
                         render: function (data) {
-                            var color = data ? 'bg-green-500' : 'bg-slate-300';
-                            return '<span class="inline-block w-2 h-2 rounded-full ' + color + '"></span>';
+                            if (data) {
+                                return '<span class="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full"><i class="fa-solid fa-check text-[10px]"></i> Sent</span>';
+                            }
+                            return '<span class="inline-flex items-center gap-1 text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full"><i class="fa-solid fa-minus text-[10px]"></i> Pending</span>';
                         },
                     },
                     {
                         data: 'date',
                         orderable: false,
                         searchable: false,
-                        className: 'text-center',
+                        className: 'text-right',
                         render: function (data) {
-                            return '<a href="' + basePath + '/report?date=' + data + '" class="text-sky-600 hover:text-sky-800 text-xs font-medium mr-3">View</a>'
-                                 + '<button onclick="uploadSales(\'' + data + '\', this)" class="text-sky-600 hover:text-sky-800 text-xs font-medium">Upload</button>';
+                            return '<a href="' + basePath + '/report?date=' + data + '" class="btn btn-view"><i class="fa-solid fa-eye text-[11px]"></i> View</a> '
+                                 + '<button onclick="uploadSales(\'' + data + '\', this)" class="btn btn-upload"><i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Upload</button>';
                         },
                     },
                 ],
                 language: {
-                    emptyTable: 'No sales found',
+                    emptyTable: 'No sales data found',
                     search: '',
                     searchPlaceholder: 'Search...',
                 },

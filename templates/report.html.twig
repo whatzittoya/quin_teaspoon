@@ -3,25 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QUINOS - Report</title>
+    <title>QUINOS - Report {{ date }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.tailwindcss.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        body { font-family: 'Inter', sans-serif; }
         .dataTables_wrapper .dataTables_filter input {
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.875rem;
+            padding: 0.5rem 0.85rem 0.5rem 2.2rem;
+            font-size: 0.85rem;
             outline: none;
+            background: #f8fafc url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2394a3b8'%3E%3Cpath fill-rule='evenodd' d='M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z' clip-rule='evenodd'/%3E%3C/svg%3E") no-repeat 0.65rem center;
+            background-size: 1rem;
+            transition: border-color 0.15s;
         }
         .dataTables_wrapper .dataTables_filter input:focus {
-            border-color: #38bdf8;
+            border-color: #0284c7;
+            background-color: #fff;
         }
         .dataTables_wrapper .dataTables_length select {
             border: 1px solid #e2e8f0;
             border-radius: 0.5rem;
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
+            padding: 0.35rem 0.5rem;
+            font-size: 0.85rem;
         }
         .dataTables_wrapper .dataTables_info,
         .dataTables_wrapper .dataTables_length,
@@ -32,11 +40,12 @@
             padding: 0.75rem 0;
         }
         .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.25rem 0.6rem;
+            padding: 0.3rem 0.7rem;
             margin: 0 2px;
             border-radius: 0.375rem;
             font-size: 0.8rem;
             color: #475569 !important;
+            border: 1px solid transparent;
         }
         .dataTables_wrapper .dataTables_paginate .paginate_button.current {
             background: #0284c7 !important;
@@ -44,22 +53,24 @@
             border: none;
         }
         .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #e2e8f0 !important;
+            background: #f1f5f9 !important;
             color: #0f172a !important;
-            border: none;
+            border: 1px solid #e2e8f0;
         }
         table.dataTable thead th {
-            border-bottom: 1px solid #e2e8f0;
-            font-weight: 500;
-            color: #94a3b8;
-            font-size: 0.8rem;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 600;
+            color: #64748b;
+            font-size: 0.75rem;
             text-transform: uppercase;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.05em;
+            padding: 0.75rem 1rem;
         }
         table.dataTable tbody td {
             border-bottom: 1px solid #f1f5f9;
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 1rem;
             font-size: 0.813rem;
+            color: #334155;
         }
         table.dataTable tbody tr:hover {
             background: #f8fafc !important;
@@ -67,31 +78,60 @@
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
-    <nav class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <span class="text-lg font-semibold text-slate-800">QUINOS</span>
-        <div class="flex items-center gap-4">
-            <span class="text-sm text-slate-500">{{ name }}</span>
-            <a href="{{ base_path }}/logout" class="text-sm text-slate-500 hover:text-slate-700">Sign out</a>
+    <nav class="bg-white border-b border-slate-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-sky-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white text-sm font-bold">Q</span>
+                </div>
+                <span class="text-lg font-bold text-slate-800 tracking-tight">QUINOS</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-sm text-slate-500">
+                    <i class="fa-regular fa-user text-xs"></i>
+                    <span>{{ name }}</span>
+                </div>
+                <a href="/logout" class="text-sm text-slate-400 hover:text-red-500 transition">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
+            </div>
         </div>
     </nav>
 
-    <div class="max-w-6xl mx-auto px-4 py-8">
-        <div class="flex items-center gap-3 mb-4">
-            <a href="{{ base_path }}/home" class="text-sm text-sky-600 hover:text-sky-800">&larr; Back</a>
-            <h1 class="text-xl font-semibold text-slate-800">Sales Report &mdash; {{ date }}</h1>
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-4">
+                <a href="/home" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300 transition">
+                    <i class="fa-solid fa-arrow-left text-sm"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">Sales Detail</h1>
+                    <p class="text-sm text-slate-400 mt-0.5">
+                        <i class="fa-regular fa-calendar mr-1"></i> {{ date }}
+                    </p>
+                </div>
+            </div>
+            <button id="upload-btn" onclick="uploadDate()" class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
+                <i class="fa-solid fa-cloud-arrow-up text-xs"></i> Upload to SFTP
+            </button>
         </div>
 
-        <div class="bg-white rounded-lg border border-slate-200 p-4">
+        <div id="upload-info" class="hidden mb-4 p-4 rounded-lg border text-sm flex items-start gap-3">
+            <div id="upload-info-icon"></div>
+            <div id="upload-info-content" class="flex-1"></div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
             <table id="report-table" class="w-full">
                 <thead>
                     <tr>
-                        <th class="text-left px-4 py-2">Date</th>
-                        <th class="text-left px-4 py-2">Bill No</th>
-                        <th class="text-left px-4 py-2">Code</th>
-                        <th class="text-left px-4 py-2">Description</th>
-                        <th class="text-right px-4 py-2">Quantity</th>
-                        <th class="text-right px-4 py-2">Amount</th>
-                        <th class="text-left px-4 py-2">Parent</th>
+                        <th class="text-left">Date</th>
+                        <th class="text-left">Bill No</th>
+                        <th class="text-left">Code</th>
+                        <th class="text-left">Description</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Amount</th>
+                        <th class="text-left">Parent</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -102,37 +142,89 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>
+        function showInfo(type, message) {
+            var $info = $('#upload-info');
+            var $icon = $('#upload-info-icon');
+            var $content = $('#upload-info-content');
+
+            $info.removeClass('hidden bg-green-50 border-green-200 bg-red-50 border-red-200');
+            $content.removeClass('text-green-800 text-red-800');
+
+            if (type === 'success') {
+                $info.addClass('bg-green-50 border-green-200');
+                $content.addClass('text-green-800');
+                $icon.html('<i class="fa-solid fa-circle-check text-green-500 mt-0.5"></i>');
+            } else {
+                $info.addClass('bg-red-50 border-red-200');
+                $content.addClass('text-red-800');
+                $icon.html('<i class="fa-solid fa-circle-exclamation text-red-500 mt-0.5"></i>');
+            }
+            $content.html(message);
+        }
+
+        function uploadDate() {
+            var $btn = $('#upload-btn');
+            $btn.addClass('opacity-50 pointer-events-none').html('<i class="fa-solid fa-spinner fa-spin text-xs"></i> Uploading...');
+
+            $.post('/api/sales/upload', { date: '{{ date }}' }, function (res) {
+                if (res.error) {
+                    showInfo('error', '<strong>Error:</strong> ' + res.error + '<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-red-100 rounded p-2">' + (res.sftp_output || '') + '</pre>');
+                } else {
+                    showInfo('success', '<strong>' + res.file + '</strong> — ' + res.rows + ' rows<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-green-100 rounded p-2">' + res.sftp_output + '</pre>');
+                }
+            }).fail(function (xhr) {
+                var msg = xhr.responseJSON ? xhr.responseJSON.error : 'Upload failed';
+                showInfo('error', '<strong>Error:</strong> ' + msg);
+            }).always(function () {
+                $btn.removeClass('opacity-50 pointer-events-none').html('<i class="fa-solid fa-cloud-arrow-up text-xs"></i> Upload to SFTP');
+            });
+        }
+
         $(function () {
             $('#report-table').DataTable({
-                ajax: '{{ base_path }}/api/sales/report?date={{ date }}',
+                ajax: '/api/sales/report?date={{ date }}',
                 pageLength: 20,
                 order: [[1, 'asc']],
                 columns: [
                     { data: 'date' },
-                    { data: 'bill_no' },
-                    { data: 'code' },
+                    {
+                        data: 'bill_no',
+                        render: function (data) {
+                            return '<span class="font-medium">' + data + '</span>';
+                        },
+                    },
+                    {
+                        data: 'code',
+                        render: function (data) {
+                            return '<code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">' + (data || '') + '</code>';
+                        },
+                    },
                     { data: 'description' },
                     {
                         data: 'quantity',
-                        className: 'text-right',
+                        className: 'text-right tabular-nums',
                     },
                     {
                         data: 'amount',
                         className: 'text-right',
                         render: function (data) {
-                            return parseFloat(data).toLocaleString(undefined, {
+                            return '<span class="font-medium tabular-nums">' + parseFloat(data).toLocaleString(undefined, {
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
-                            });
+                            }) + '</span>';
                         },
                     },
                     {
                         data: 'parent',
                         defaultContent: '',
+                        render: function (data) {
+                            if (!data) return '<span class="text-slate-300">—</span>';
+                            return '<code class="text-xs bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">' + data + '</code>';
+                        },
                     },
                 ],
                 language: {
-                    emptyTable: 'No data found',
+                    emptyTable: 'No data found for this date',
                     search: '',
                     searchPlaceholder: 'Search...',
                 },
