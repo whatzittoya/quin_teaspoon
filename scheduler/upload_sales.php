@@ -122,10 +122,9 @@ foreach ($rows as $row) {
     $unitPrice = (float) $row['unitPrice'];
     $discount  = (float) $row['discountAmount'];
 
-    $vatDivisor     = 1 + ($vatPct / 100);
-    $unitPriceExcl  = round($unitPrice / $vatDivisor, 2);
-    $amountExcl     = round(($qty * $unitPrice - $discount) / $vatDivisor, 2);
-    $discountExcl   = round($discount / $vatDivisor, 2);
+    $unitPriceExcl  = round($unitPrice, 2);
+    $amountExcl     = round(($qty * $unitPrice - $discount), 2);
+    $discountExcl   = round($discount, 2);
 
     $parent = str_replace(';', '', $row['parent_code'] ?? '');
 

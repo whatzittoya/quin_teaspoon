@@ -99,7 +99,8 @@ class SalesController
                 'description' => $row['description'],
                 'department' => $row['department_name'] ?? '',
                 'quantity' => (float) $row['quantity'],
-                'amount' => round((float) $row['revenue'], 2),
+                'unit_price' => round((float) $row['unitPrice'], 2),
+                'amount' => round(((float) $row['quantity'] * (float) $row['unitPrice'] - (float) $row['discountAmount']), 2),
                 'parent' => $row['parent_code'],
             ];
         }, $rows);
@@ -231,10 +232,9 @@ class SalesController
             $unitPrice = (float) $row['unitPrice'];
             $discount = (float) $row['discountAmount'];
 
-            $vatDivisor = 1 + ($vatPct / 100);
-            $unitPriceExcl = round($unitPrice / $vatDivisor, 2);
-            $amountExcl = round(($qty * $unitPrice - $discount) / $vatDivisor, 2);
-            $discountExcl = round($discount / $vatDivisor, 2);
+            $unitPriceExcl = round($unitPrice, 2);
+            $amountExcl = round(($qty * $unitPrice - $discount), 2);
+            $discountExcl = round($discount, 2);
 
             $parent = str_replace(';', '', $row['parent_code'] ?? '');
 
