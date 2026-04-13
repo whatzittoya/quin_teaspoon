@@ -255,10 +255,25 @@ class SalesController
 
     private function sftpUpload(string $localPath, string $filename): array
     {
-        $host = 'proxy.tspoonlab.com';
-        $port = 2222;
-        $user = 'renew.bali';
-        $pass = 'KprKuh1';
+        $host = trim($_ENV['SFTP_HOST'] ?? '');
+        $portRaw = $_ENV['SFTP_PORT'] ?? '22';
+        $port = $portRaw !== '' ? (int) $portRaw : 22;
+        if ($port < 1 || $port > 65535) {
+            $port = 22;
+        }
+        $user = trim($_ENV['SFTP_USER'] ?? '');
+        $pass = $_ENV['SFTP_PASSWORD'] ?? '';
+        $remoteDir = trim($_ENV['SFTP_REMOTE_DIR'] ?? 'uploads', '/');
+        if ($remoteDir === '') {
+            $remoteDir = 'uploads';
+        }
+
+        if ($host === '' || $user === '' || $pass === '') {
+            return [
+                'exit_code' => 1,
+                'output' => 'SFTP not configured: set SFTP_HOST, SFTP_USER, and SFTP_PASSWORD in .env',
+            ];
+        }
 
         // Use phpseclib (works on both Windows and Linux)
         if (class_exists('phpseclib3\\Net\\SFTP')) {
@@ -267,11 +282,11 @@ class SalesController
                 if (!$sftp->login($user, $pass)) {
                     return ['exit_code' => 1, 'output' => 'SFTP login failed'];
                 }
-                $sftp->chdir('uploads');
+                $sftp->chdir($remoteDir);
                 if (!$sftp->put($filename, $localPath, \phpseclib3\Net\SFTP::SOURCE_LOCAL_FILE)) {
                     return ['exit_code' => 1, 'output' => 'SFTP put failed'];
                 }
-                return ['exit_code' => 0, 'output' => "Uploaded {$filename} to /uploads"];
+                return ['exit_code' => 0, 'output' => "Uploaded {$filename} to /{$remoteDir}"];
             } catch (\Exception $e) {
                 return ['exit_code' => 1, 'output' => 'SFTP error: ' . $e->getMessage()];
             }
@@ -284,7 +299,7 @@ spawn sftp -o StrictHostKeyChecking=no -P {$port} {$user}@{$host}
 expect "password:"
 send "{$pass}\r"
 expect "sftp>"
-send "cd uploads\r"
+send "cd {$remoteDir}\r"
 expect "sftp>"
 send "put {$localPath}\r"
 expect "sftp>"
