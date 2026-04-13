@@ -91,7 +91,7 @@
                     <i class="fa-regular fa-user text-xs"></i>
                     <span>{{ name }}</span>
                 </div>
-                <a href="/logout" class="text-sm text-slate-400 hover:text-red-500 transition">
+                <a href="{{ base_path }}/logout" class="text-sm text-slate-400 hover:text-red-500 transition">
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </a>
             </div>
@@ -148,6 +148,8 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>
+        var basePath = '{{ base_path }}';
+
         function showInfo(type, message) {
             var $info = $('#upload-info');
             var $icon = $('#upload-info-icon');
@@ -172,7 +174,7 @@
             var $btn = $('#upload-btn');
             $btn.addClass('opacity-50 pointer-events-none').html('<i class="fa-solid fa-spinner fa-spin text-xs"></i> Uploading...');
 
-            $.post('/api/sales/upload', { date: '{{ date }}' }, function (res) {
+            $.post(basePath + '/api/sales/upload', { date: '{{ date }}' }, function (res) {
                 if (res.error) {
                     showInfo('error', '<strong>Error:</strong> ' + res.error + '<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-red-100 rounded p-2">' + (res.sftp_output || '') + '</pre>');
                 } else {
@@ -188,7 +190,7 @@
 
         $(function () {
             $('#report-table').DataTable({
-                ajax: '/api/sales/report?date={{ date }}',
+                ajax: basePath + '/api/sales/report?date={{ date }}',
                 pageLength: 20,
                 order: [[1, 'asc']],
                 columns: [

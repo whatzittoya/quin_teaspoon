@@ -1,6 +1,6 @@
 @echo off
 REM QUINOS — Install Windows Task Scheduler job
-REM Runs daily at 07:00 (10 PM)
+REM Runs daily at 07:00 (7:00 AM local time)
 REM Run this script as Administrator
 
 set TASK_NAME=QuinosSalesUpload

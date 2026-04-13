@@ -25,7 +25,7 @@
             <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2.5 mb-5">{{ error }}</div>
             {% endif %}
 
-            <form method="POST" action="/login">
+            <form method="POST" action="{{ base_path }}/login">
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-slate-600 mb-1.5">Name</label>
                     <input type="text" name="name" required
