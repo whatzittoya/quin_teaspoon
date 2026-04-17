@@ -348,19 +348,13 @@
                         render: function (data, type, row) {
                             var view = '<a href="' + basePath + '/report?date=' + row.date + '" class="btn btn-view"><i class="fa-solid fa-eye text-[11px]"></i> View</a> ';
                             var download = '<a href="' + basePath + '/api/sales/download?date=' + row.date + '" class="btn btn-view"><i class="fa-solid fa-download text-[11px]"></i> CSV</a> ';
-                            if (row.date === today) {
-                                if (row.uploaded) {
-                                    return view + download + '<span class="btn text-xs text-green-400 cursor-default"><i class="fa-solid fa-circle-check text-[11px]"></i> Uploaded</span>';
-                                }
-                                if (row.daily_closed) {
-                                    return view + download + '<button onclick="uploadSales(\'' + row.date + '\', this)" class="btn btn-upload"><i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Upload</button>';
-                                }
-                                return view + download + '<span class="btn text-xs text-slate-300 cursor-default" title="Day not closed yet"><i class="fa-solid fa-clock text-[11px]"></i> Day Open</span>';
-                            }
                             if (row.uploaded) {
                                 return view + download + '<span class="btn text-xs text-green-400 cursor-default"><i class="fa-solid fa-circle-check text-[11px]"></i> Uploaded</span>';
                             }
-                            return view + download + '<button onclick="uploadSales(\'' + row.date + '\', this)" class="btn btn-upload"><i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Upload</button>';
+                            if (row.daily_closed) {
+                                return view + download + '<button onclick="uploadSales(\'' + row.date + '\', this)" class="btn btn-upload"><i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Upload</button>';
+                            }
+                            return view + download + '<span class="btn text-xs text-slate-300 cursor-default" title="Day not closed yet"><i class="fa-solid fa-clock text-[11px]"></i> Day Open</span>';
                         },
                     },
                 ],
