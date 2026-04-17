@@ -49,11 +49,19 @@ try {
 }
 
 // Determine date
-$date = $argv[1] ?? date('Y-m-d', strtotime('-1 day'));
+$date = $argv[1] ?? date('Y-m-d');
 $from = $date . ' 00:00:00';
 $to   = $date . ' 23:59:59';
 
 echo date('Y-m-d H:i:s') . " [START] Processing sales for {$date}\n";
+
+// Check daily procedure is closed before uploading
+$dpStmt = $db->prepare('SELECT id FROM tbl_daily_procedures WHERE DATE(date) = :date AND closed IS NOT NULL LIMIT 1');
+$dpStmt->execute(['date' => $date]);
+if (!$dpStmt->fetch()) {
+    echo date('Y-m-d H:i:s') . " [SKIP] Daily procedure not closed for {$date} — upload aborted\n";
+    exit(0);
+}
 
 // Fetch sales data (same query as SalesController)
 $sql = "

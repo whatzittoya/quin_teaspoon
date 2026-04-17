@@ -19,3 +19,4 @@ $app->get('/report', [SalesController::class, 'reportPage']);
 
 $app->get('/api/scheduler/status', [SchedulerController::class, 'status']);
 $app->post('/api/scheduler/toggle', [SchedulerController::class, 'toggle']);
+$app->post('/api/scheduler/time', [SchedulerController::class, 'setTime']);

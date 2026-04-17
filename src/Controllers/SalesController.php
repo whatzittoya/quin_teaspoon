@@ -66,12 +66,20 @@ class SalesController
             ORDER BY sale_date DESC
         ');
 
-        $data = array_map(function ($row) {
+        // Fetch dates where daily procedure is closed
+        $closedDates = [];
+        $dpStmt = $db->query('SELECT DATE(date) as dp_date FROM tbl_daily_procedures WHERE closed IS NOT NULL');
+        foreach ($dpStmt->fetchAll() as $dp) {
+            $closedDates[$dp['dp_date']] = true;
+        }
+
+        $data = array_map(function ($row) use ($closedDates) {
             return [
-                'date' => $row['sale_date'],
-                'sales' => (int) $row['total_sales'],
-                'total' => round((float) $row['total_amount'], 2),
-                'uploaded' => (bool) $row['uploaded'],
+                'date'         => $row['sale_date'],
+                'sales'        => (int) $row['total_sales'],
+                'total'        => round((float) $row['total_amount'], 2),
+                'uploaded'     => (bool) $row['uploaded'],
+                'daily_closed' => isset($closedDates[$row['sale_date']]),
             ];
         }, $stmt->fetchAll());
 

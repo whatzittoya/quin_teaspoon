@@ -19,6 +19,18 @@ class SchedulerController
         return $this->getSchedulerDir() . DIRECTORY_SEPARATOR . $name;
     }
 
+    private function getScheduledTime(): string
+    {
+        $timeFile = $this->getSchedulerDir() . DIRECTORY_SEPARATOR . '.time';
+        if (file_exists($timeFile)) {
+            $t = trim(file_get_contents($timeFile));
+            if (preg_match('/^\d{2}:\d{2}$/', $t)) {
+                return $t;
+            }
+        }
+        return '22:30';
+    }
+
     public function status(Request $request, Response $response): Response
     {
         if (empty($_SESSION['user_name'])) {
@@ -45,8 +57,46 @@ class SchedulerController
         }
 
         return $this->json($response, [
-            'enabled' => $enabled,
-            'last_log' => $lastLog,
+            'enabled'        => $enabled,
+            'last_log'       => $lastLog,
+            'schedule_time'  => $this->getScheduledTime(),
+        ]);
+    }
+
+    public function setTime(Request $request, Response $response): Response
+    {
+        if (empty($_SESSION['user_name'])) {
+            return $this->json($response, ['error' => 'Unauthorized'], 401);
+        }
+
+        $body = (array) $request->getParsedBody();
+        $time = trim($body['time'] ?? '');
+
+        if (!preg_match('/^\d{2}:\d{2}$/', $time)) {
+            return $this->json($response, ['error' => 'Invalid time format. Use HH:MM'], 400);
+        }
+
+        // Save to .time file
+        $timeFile = $this->getSchedulerDir() . DIRECTORY_SEPARATOR . '.time';
+        file_put_contents($timeFile, $time);
+
+        // Update Windows Task Scheduler if task exists
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $output = [];
+            exec('schtasks /Query /TN "' . self::TASK_NAME . '" /FO CSV /NH 2>&1', $output, $exitCode);
+            if ($exitCode === 0) {
+                exec('schtasks /Change /TN "' . self::TASK_NAME . '" /ST ' . escapeshellarg($time) . ' 2>&1', $out, $code);
+                if ($code !== 0) {
+                    return $this->json($response, [
+                        'error' => 'Saved locally but schtasks update failed: ' . implode(' ', $out),
+                    ]);
+                }
+            }
+        }
+
+        return $this->json($response, [
+            'schedule_time' => $time,
+            'message'       => 'Schedule time updated to ' . $time,
         ]);
     }
 
@@ -67,7 +117,8 @@ class SchedulerController
         if ($exitCode !== 0) {
             // Task doesn't exist — create it
             $batPath = $this->getBatPath('run.bat');
-            $cmd = 'schtasks /Create /TN "' . self::TASK_NAME . '" /TR "\"' . $batPath . '\"" /SC DAILY /ST 07:00 /F 2>&1';
+            $schedTime = $this->getScheduledTime();
+            $cmd = 'schtasks /Create /TN "' . self::TASK_NAME . '" /TR "\"' . $batPath . '\"" /SC DAILY /ST ' . $schedTime . ' /F 2>&1';
             $createOutput = [];
             exec($cmd, $createOutput, $createExit);
 
