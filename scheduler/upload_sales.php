@@ -325,21 +325,28 @@ foreach ($segments as $segment) {
     logLine('OK', "{$segment}: " . ($upload['output'] ?? "Uploaded {$filename}"));
 
     if ($segment === SEGMENT_INVOICED) {
-        $stmt = $db->prepare('UPDATE tbl_sales SET trobex = 1 WHERE date BETWEEN :from AND :to AND closed = 1 AND voidCheck = 0 AND invoice_id IS NOT NULL');
+        $stmt = $db->prepare(
+            'UPDATE tbl_sales s
+             INNER JOIN tbl_invoices inv ON s.invoice_id = inv.id
+             SET s.trobex = 1
+             WHERE s.date BETWEEN :from AND :to
+               AND s.closed = 1
+               AND s.voidCheck = 0'
+        );
         $stmt->execute(['from' => $from, 'to' => $to]);
         logLine('OK', "Marked trobex = 1 for invoiced sales on {$date}");
     } elseif ($segment === SEGMENT_NO_INVOICE) {
         $stmt = $db->prepare(
             'UPDATE tbl_sales s
              LEFT JOIN tbl_invoices inv_row ON s.invoice_id = inv_row.id
-             SET s.trobex_no_invoice = 1
+             SET s.trobex = 1
              WHERE s.date BETWEEN :from AND :to
                AND s.closed = 1
                AND s.voidCheck = 0
                AND (s.invoice_id IS NULL OR inv_row.id IS NULL)'
         );
         $stmt->execute(['from' => $from, 'to' => $to]);
-        logLine('OK', "Marked trobex_no_invoice = 1 for no-invoice sales on {$date}");
+        logLine('OK', "Marked trobex = 1 for no-invoice sales on {$date}");
     }
 }
 

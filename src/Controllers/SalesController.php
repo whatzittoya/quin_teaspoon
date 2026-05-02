@@ -103,13 +103,14 @@ class SalesController
 
         $db = $request->getAttribute('container')->get('db');
         $stmt = $db->query('
-            SELECT DATE(date) as sale_date,
-                   COUNT(*) as total_sales,
-                   SUM(total) as total_amount,
-                   BIT_OR(trobex) as uploaded_invoiced,
-                   BIT_OR(COALESCE(trobex_no_invoice, 0)) as uploaded_no_sales
-            FROM tbl_sales
-            GROUP BY DATE(date)
+            SELECT DATE(s.date) AS sale_date,
+                   COUNT(*) AS total_sales,
+                   SUM(s.total) AS total_amount,
+                   BIT_OR(CASE WHEN s.invoice_id IS NOT NULL AND inv.id IS NOT NULL THEN s.trobex ELSE 0 END) AS uploaded_invoiced,
+                   BIT_OR(CASE WHEN s.invoice_id IS NULL OR inv.id IS NULL THEN s.trobex ELSE 0 END) AS uploaded_no_sales
+            FROM tbl_sales s
+            LEFT JOIN tbl_invoices inv ON s.invoice_id = inv.id
+            GROUP BY DATE(s.date)
             ORDER BY sale_date DESC
         ');
 
@@ -281,13 +282,20 @@ class SalesController
                 if ($sftpResult['exit_code'] === 0) {
                     $db = $request->getAttribute('container')->get('db');
                     if ($segment === self::SEGMENT_INVOICED) {
-                        $stmt = $db->prepare('UPDATE tbl_sales SET trobex = 1 WHERE date BETWEEN :from AND :to AND closed = 1 AND voidCheck = 0 AND invoice_id IS NOT NULL');
+                        $stmt = $db->prepare(
+                            'UPDATE tbl_sales s
+                             INNER JOIN tbl_invoices inv ON s.invoice_id = inv.id
+                             SET s.trobex = 1
+                             WHERE s.date BETWEEN :from AND :to
+                               AND s.closed = 1
+                               AND s.voidCheck = 0'
+                        );
                         $stmt->execute(['from' => $date . ' 00:00:00', 'to' => $date . ' 23:59:59']);
                     } elseif ($segment === self::SEGMENT_NO_INVOICE) {
                         $stmt = $db->prepare(
                             'UPDATE tbl_sales s
                              LEFT JOIN tbl_invoices inv_row ON s.invoice_id = inv_row.id
-                             SET s.trobex_no_invoice = 1
+                             SET s.trobex = 1
                              WHERE s.date BETWEEN :from AND :to
                                AND s.closed = 1
                                AND s.voidCheck = 0
