@@ -187,7 +187,8 @@
                         <th class="text-left">Date</th>
                         <th class="text-right">Sales</th>
                         <th class="text-right">Total</th>
-                        <th class="text-center">Status</th>
+                        <th class="text-center"><span class="text-xs font-semibold text-slate-600">Sales SFTP</span></th>
+                        <th class="text-center"><span class="text-xs font-semibold text-slate-600">No sales SFTP</span></th>
                         <th class="text-right">Actions</th>
                     </tr>
                 </thead>
@@ -287,6 +288,13 @@
             $content.html(message);
         }
 
+        function sftpStatusBadge(sent) {
+            if (sent) {
+                return '<span class="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full"><i class="fa-solid fa-check text-[10px]"></i> Sent</span>';
+            }
+            return '<span class="inline-flex items-center gap-1 text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full"><i class="fa-solid fa-minus text-[10px]"></i> Pending</span>';
+        }
+
         function uploadSales(date, mode, btn) {
             var $btn = $(btn);
             var origHtml = $btn.html();
@@ -358,13 +366,17 @@
                         },
                     },
                     {
-                        data: 'uploaded',
+                        data: 'uploaded_invoiced',
                         className: 'text-center',
                         render: function (data) {
-                            if (data) {
-                                return '<span class="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full"><i class="fa-solid fa-check text-[10px]"></i> Sent</span>';
-                            }
-                            return '<span class="inline-flex items-center gap-1 text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full"><i class="fa-solid fa-minus text-[10px]"></i> Pending</span>';
+                            return sftpStatusBadge(data);
+                        },
+                    },
+                    {
+                        data: 'uploaded_no_sales',
+                        className: 'text-center',
+                        render: function (data) {
+                            return sftpStatusBadge(data);
                         },
                     },
                     {
@@ -384,9 +396,6 @@
                                 '<a class="block px-3 py-2 text-xs text-slate-700 hover:bg-sky-50" href="' + dl + 'invoiced">Sales</a>' +
                                 '<a class="block px-3 py-2 text-xs text-slate-700 hover:bg-sky-50" href="' + dl + 'no_invoice">No sales</a>' +
                                 '</div></details> ';
-                            if (row.uploaded) {
-                                return view + download + '<span class="btn text-xs text-green-400 cursor-default"><i class="fa-solid fa-circle-check text-[11px]"></i> Uploaded</span>';
-                            }
                             if (row.daily_closed) {
                                 var upload =
                                     '<details class="actions-dropdown relative inline-block align-middle">' +

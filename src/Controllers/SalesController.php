@@ -106,7 +106,8 @@ class SalesController
             SELECT DATE(date) as sale_date,
                    COUNT(*) as total_sales,
                    SUM(total) as total_amount,
-                   BIT_OR(trobex) as uploaded
+                   BIT_OR(trobex) as uploaded_invoiced,
+                   BIT_OR(COALESCE(trobex_no_invoice, 0)) as uploaded_no_sales
             FROM tbl_sales
             GROUP BY DATE(date)
             ORDER BY sale_date DESC
@@ -120,12 +121,17 @@ class SalesController
         }
 
         $data = array_map(function ($row) use ($closedDates) {
+            $inv = (bool) $row['uploaded_invoiced'];
+            $nos = (bool) $row['uploaded_no_sales'];
+
             return [
-                'date'         => $row['sale_date'],
-                'sales'        => (int) $row['total_sales'],
-                'total'        => round((float) $row['total_amount'], 2),
-                'uploaded'     => (bool) $row['uploaded'],
-                'daily_closed' => isset($closedDates[$row['sale_date']]),
+                'date'              => $row['sale_date'],
+                'sales'             => (int) $row['total_sales'],
+                'total'             => round((float) $row['total_amount'], 2),
+                'uploaded_invoiced' => $inv,
+                'uploaded_no_sales' => $nos,
+                'uploaded'          => $inv && $nos,
+                'daily_closed'      => isset($closedDates[$row['sale_date']]),
             ];
         }, $stmt->fetchAll());
 
@@ -272,10 +278,23 @@ class SalesController
                 $sftpResult = $this->sftpUpload($localPath, $filename, $segment);
                 $item['sftp_exit_code'] = $sftpResult['exit_code'];
                 $item['sftp_output'] = $sftpResult['output'];
-                if ($sftpResult['exit_code'] === 0 && $segment === self::SEGMENT_INVOICED) {
+                if ($sftpResult['exit_code'] === 0) {
                     $db = $request->getAttribute('container')->get('db');
-                    $stmt = $db->prepare('UPDATE tbl_sales SET trobex = 1 WHERE date BETWEEN :from AND :to AND closed = 1 AND voidCheck = 0 AND invoice_id IS NOT NULL');
-                    $stmt->execute(['from' => $date . ' 00:00:00', 'to' => $date . ' 23:59:59']);
+                    if ($segment === self::SEGMENT_INVOICED) {
+                        $stmt = $db->prepare('UPDATE tbl_sales SET trobex = 1 WHERE date BETWEEN :from AND :to AND closed = 1 AND voidCheck = 0 AND invoice_id IS NOT NULL');
+                        $stmt->execute(['from' => $date . ' 00:00:00', 'to' => $date . ' 23:59:59']);
+                    } elseif ($segment === self::SEGMENT_NO_INVOICE) {
+                        $stmt = $db->prepare(
+                            'UPDATE tbl_sales s
+                             LEFT JOIN tbl_invoices inv_row ON s.invoice_id = inv_row.id
+                             SET s.trobex_no_invoice = 1
+                             WHERE s.date BETWEEN :from AND :to
+                               AND s.closed = 1
+                               AND s.voidCheck = 0
+                               AND (s.invoice_id IS NULL OR inv_row.id IS NULL)'
+                        );
+                        $stmt->execute(['from' => $date . ' 00:00:00', 'to' => $date . ' 23:59:59']);
+                    }
                 }
                 $item['status'] = $sftpResult['exit_code'] === 0 ? 'uploaded' : 'failed';
             } else {
