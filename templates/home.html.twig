@@ -105,6 +105,16 @@
             opacity: 0.5;
             pointer-events: none;
         }
+        /* Row action dropdowns (CSV / Upload) */
+        details.actions-dropdown > summary {
+            list-style: none;
+        }
+        details.actions-dropdown > summary::-webkit-details-marker {
+            display: none;
+        }
+        details.actions-dropdown[open] > summary {
+            background: #e0f2fe;
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
@@ -277,22 +287,39 @@
             $content.html(message);
         }
 
-        function uploadSales(date, btn) {
+        function uploadSales(date, mode, btn) {
             var $btn = $(btn);
-            $btn.addClass('loading').html('<i class="fa-solid fa-spinner fa-spin"></i> Uploading...');
+            var origHtml = $btn.html();
+            $btn.addClass('loading').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Uploading...');
 
-            $.post(basePath + '/api/sales/upload', { date: date }, function (res) {
+            $.post(basePath + '/api/sales/upload', { date: date, mode: mode }, function (res) {
                 if (res.error) {
                     showInfo('error', '<strong>Error:</strong> ' + res.error + '<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-red-100 rounded p-2">' + (res.sftp_output || '') + '</pre>');
                 } else {
-                    showInfo('success', '<strong>' + res.file + '</strong> — ' + res.rows + ' rows<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-green-100 rounded p-2">' + res.sftp_output + '</pre>');
+                    var detail = '';
+                    if (Array.isArray(res.uploads) && res.uploads.length) {
+                        res.uploads.forEach(function (u) {
+                            detail += '<div class="mb-2"><strong>' + u.segment + '</strong>: ';
+                            if (u.status === 'uploaded') {
+                                detail += (u.file || '') + ' — ' + (u.rows || 0) + ' rows';
+                            } else if (u.status === 'saved') {
+                                detail += (u.file || '') + ' — saved locally';
+                            } else if (u.status === 'skipped') {
+                                detail += (u.message || 'skipped');
+                            } else {
+                                detail += (u.file || 'file') + ' — failed';
+                            }
+                            detail += '<br><pre class="mt-1 text-xs whitespace-pre-wrap bg-green-100 rounded p-2">' + (u.sftp_output || u.message || '') + '</pre></div>';
+                        });
+                    }
+                    showInfo('success', detail || ('<strong>' + res.file + '</strong> — ' + res.rows + ' rows<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-green-100 rounded p-2">' + res.sftp_output + '</pre>'));
                     $('#sales-table').DataTable().ajax.reload(null, false);
                 }
             }).fail(function (xhr) {
                 var msg = xhr.responseJSON ? xhr.responseJSON.error : 'Upload failed';
                 showInfo('error', '<strong>Error:</strong> ' + msg);
             }).always(function () {
-                $btn.removeClass('loading').html('<i class="fa-solid fa-cloud-arrow-up"></i> Upload');
+                $btn.removeClass('loading').prop('disabled', false).html(origHtml);
             });
         }
 
@@ -347,12 +374,30 @@
                         className: 'text-right',
                         render: function (data, type, row) {
                             var view = '<a href="' + basePath + '/report?date=' + row.date + '" class="btn btn-view"><i class="fa-solid fa-eye text-[11px]"></i> View</a> ';
-                            var download = '<a href="' + basePath + '/api/sales/download?date=' + row.date + '" class="btn btn-view"><i class="fa-solid fa-download text-[11px]"></i> CSV</a> ';
+                            var dl = basePath + '/api/sales/download?date=' + encodeURIComponent(row.date) + '&segment=';
+                            var download =
+                                '<details class="actions-dropdown relative inline-block align-middle">' +
+                                '<summary class="btn btn-view cursor-pointer">' +
+                                '<i class="fa-solid fa-download text-[11px]"></i> CSV <i class="fa-solid fa-caret-down text-[9px] opacity-70"></i>' +
+                                '</summary>' +
+                                '<div class="absolute right-0 mt-1 z-30 min-w-[10.5rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg text-left">' +
+                                '<a class="block px-3 py-2 text-xs text-slate-700 hover:bg-sky-50" href="' + dl + 'invoiced">Sales</a>' +
+                                '<a class="block px-3 py-2 text-xs text-slate-700 hover:bg-sky-50" href="' + dl + 'no_invoice">No sales</a>' +
+                                '</div></details> ';
                             if (row.uploaded) {
                                 return view + download + '<span class="btn text-xs text-green-400 cursor-default"><i class="fa-solid fa-circle-check text-[11px]"></i> Uploaded</span>';
                             }
                             if (row.daily_closed) {
-                                return view + download + '<button onclick="uploadSales(\'' + row.date + '\', this)" class="btn btn-upload"><i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Upload</button>';
+                                var upload =
+                                    '<details class="actions-dropdown relative inline-block align-middle">' +
+                                    '<summary class="btn btn-upload cursor-pointer">' +
+                                    '<i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Upload <i class="fa-solid fa-caret-down text-[9px] opacity-70"></i>' +
+                                    '</summary>' +
+                                    '<div class="absolute right-0 mt-1 z-30 min-w-[10.5rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg text-left">' +
+                                    '<button type="button" class="block w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-green-50" onclick="uploadSales(\'' + row.date + '\', \'invoiced\', this)">Sales</button>' +
+                                    '<button type="button" class="block w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-green-50" onclick="uploadSales(\'' + row.date + '\', \'no_invoice\', this)">No sales</button>' +
+                                    '</div></details>';
+                                return view + download + upload;
                             }
                             return view + download + '<span class="btn text-xs text-slate-300 cursor-default" title="Day not closed yet"><i class="fa-solid fa-clock text-[11px]"></i> Day Open</span>';
                         },
