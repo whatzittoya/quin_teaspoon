@@ -112,11 +112,15 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <a href="{{ base_path }}/api/sales/download?date={{ date }}" class="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
+                <select id="segment-select" class="bg-white border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-medium px-3 py-2 rounded-lg transition shadow-sm">
+                    <option value="invoiced" {% if segment == 'invoiced' %}selected{% endif %}>Invoiced Sales</option>
+                    <option value="no_invoice" {% if segment == 'no_invoice' %}selected{% endif %}>No Invoice Sales</option>
+                </select>
+                <a id="download-csv-btn" href="{{ base_path }}/api/sales/download?date={{ date }}&segment={{ segment }}" class="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
                     <i class="fa-solid fa-download text-xs"></i> Download CSV
                 </a>
                 <button id="upload-btn" onclick="uploadDate()" class="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
-                    <i class="fa-solid fa-cloud-arrow-up text-xs"></i> Upload to SFTP
+                    <i class="fa-solid fa-cloud-arrow-up text-xs"></i> Upload Both Files
                 </button>
             </div>
         </div>
@@ -149,6 +153,29 @@
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script>
         var basePath = '{{ base_path }}';
+        var dateValue = '{{ date }}';
+
+        function buildUploadMessage(res) {
+            if (!Array.isArray(res.uploads)) {
+                return '<strong>' + (res.file || 'Upload result') + '</strong> — ' + (res.rows || 0) + ' rows<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-green-100 rounded p-2">' + (res.sftp_output || '') + '</pre>';
+            }
+
+            var html = '';
+            res.uploads.forEach(function (upload) {
+                html += '<div class="mb-2"><strong>' + upload.segment + '</strong>: ';
+                if (upload.status === 'uploaded') {
+                    html += upload.file + ' — ' + upload.rows + ' rows';
+                } else if (upload.status === 'saved') {
+                    html += upload.file + ' — saved locally';
+                } else if (upload.status === 'skipped') {
+                    html += upload.message;
+                } else {
+                    html += (upload.file || 'file') + ' — failed';
+                }
+                html += '<br><pre class="mt-1 text-xs whitespace-pre-wrap bg-green-100 rounded p-2">' + (upload.sftp_output || upload.message || '') + '</pre></div>';
+            });
+            return html;
+        }
 
         function showInfo(type, message) {
             var $info = $('#upload-info');
@@ -174,11 +201,11 @@
             var $btn = $('#upload-btn');
             $btn.addClass('opacity-50 pointer-events-none').html('<i class="fa-solid fa-spinner fa-spin text-xs"></i> Uploading...');
 
-            $.post(basePath + '/api/sales/upload', { date: '{{ date }}' }, function (res) {
+            $.post(basePath + '/api/sales/upload', { date: dateValue, mode: 'both' }, function (res) {
                 if (res.error) {
-                    showInfo('error', '<strong>Error:</strong> ' + res.error + '<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-red-100 rounded p-2">' + (res.sftp_output || '') + '</pre>');
+                    showInfo('error', '<strong>Error:</strong> ' + res.error + '<br>' + buildUploadMessage(res));
                 } else {
-                    showInfo('success', '<strong>' + res.file + '</strong> — ' + res.rows + ' rows<br><pre class="mt-2 text-xs whitespace-pre-wrap bg-green-100 rounded p-2">' + res.sftp_output + '</pre>');
+                    showInfo('success', buildUploadMessage(res));
                 }
             }).fail(function (xhr) {
                 var msg = xhr.responseJSON ? xhr.responseJSON.error : 'Upload failed';
@@ -189,8 +216,13 @@
         }
 
         $(function () {
+            $('#segment-select').on('change', function () {
+                var segment = $(this).val();
+                window.location.href = basePath + '/report?date=' + encodeURIComponent(dateValue) + '&segment=' + encodeURIComponent(segment);
+            });
+
             $('#report-table').DataTable({
-                ajax: basePath + '/api/sales/report?date={{ date }}',
+                ajax: basePath + '/api/sales/report?date={{ date }}&segment={{ segment }}',
                 pageLength: 20,
                 order: [[1, 'asc']],
                 columns: [
@@ -198,6 +230,9 @@
                     {
                         data: 'bill_no',
                         render: function (data) {
+                            if (data === null || data === undefined || data === '') {
+                                return '<span class="text-slate-300">—</span>';
+                            }
                             return '<span class="font-medium">' + data + '</span>';
                         },
                     },

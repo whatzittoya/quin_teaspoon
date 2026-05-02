@@ -8,7 +8,10 @@ use Slim\Views\Twig;
 
 class SalesController
 {
-    private const REPORT_QUERY = "
+    private const SEGMENT_INVOICED = 'invoiced';
+    private const SEGMENT_NO_INVOICE = 'no_invoice';
+
+    private const REPORT_QUERY_INVOICED = "
         SELECT STRAIGHT_JOIN
             s.invoice_id AS invoice_id,
             s.date AS date,
@@ -37,6 +40,7 @@ class SalesController
         LEFT JOIN tbl_items parentcode ON parent.item_id = parentcode.id
         WHERE s.closed = 1
             AND s.date BETWEEN :from AND :to
+            AND s.invoice_id IS NOT NULL
             AND s.voidCheck = 0
             AND sl.quantity > 0
             AND (sl.unitPrice > 0 OR item.noReport = 0)
@@ -47,6 +51,48 @@ class SalesController
                 2
             ) <> 0
         ORDER BY s.invoice_id, sl.id
+    ";
+
+    private const REPORT_QUERY_NO_INVOICE = "
+        SELECT STRAIGHT_JOIN
+            s.invoice_id AS invoice_id,
+            s.date AS date,
+            sl.id AS id,
+            s.type AS salesType,
+            sl.description AS description,
+            (sl.quantity - sl.voidQuantity) AS quantity,
+            sl.unitPrice AS unitPrice,
+            ((sl.quantity - sl.voidQuantity) * sl.unitPrice) - sl.discountAmount + sl.serviceChargeAmount + sl.tax1Amount AS revenue,
+            sl.discountAmount AS discountAmount,
+            sl.tax1Amount AS tax1Amount,
+            item.code AS item_code,
+            parentcode.code AS parent_code,
+            dept.name AS department_name,
+            s.tax1 AS vat_percent
+        FROM tbl_sales s
+        JOIN tbl_sales_lines sl ON sl.sales_id = s.id
+        JOIN tbl_items item ON sl.item_id = item.id
+        JOIN tbl_categories cat ON item.category_id = cat.id
+        JOIN tbl_departments dept ON cat.department_id = dept.id
+        JOIN tbl_employees emp ON sl.employee_id = emp.id
+        LEFT JOIN tbl_sales_lines discountline ON sl.discountLine_id = discountline.id
+        LEFT JOIN tbl_customers cust ON s.customer_id = cust.id
+        LEFT JOIN tbl_sales_lines parent ON sl.parent_id = parent.id
+        LEFT JOIN tbl_items parentcode ON parent.item_id = parentcode.id
+        LEFT JOIN tbl_invoices inv_row ON s.invoice_id = inv_row.id
+        WHERE s.closed = 1
+            AND s.date BETWEEN :from AND :to
+            AND (s.invoice_id IS NULL OR inv_row.id IS NULL)
+            AND s.voidCheck = 0
+            AND sl.quantity > 0
+            AND (sl.unitPrice > 0 OR item.noReport = 0)
+            AND dept.name = 'Restaurant'
+            AND ROUND(
+                ((sl.quantity - sl.voidQuantity) * sl.unitPrice)
+                - sl.discountAmount + sl.serviceChargeAmount + sl.tax1Amount,
+                2
+            ) <> 0
+        ORDER BY sl.id
     ";
 
     public function list(Request $request, Response $response): Response
@@ -97,12 +143,17 @@ class SalesController
             return $this->json($response, ['error' => 'Date required'], 400);
         }
 
-        $rows = $this->fetchReport($request, $date);
+        $segment = $this->normalizeSegment($request->getQueryParams()['segment'] ?? self::SEGMENT_INVOICED);
+        if ($segment === null) {
+            return $this->json($response, ['error' => 'Invalid segment'], 400);
+        }
+
+        $rows = $this->fetchReport($request, $date, $segment);
 
         $data = array_map(function ($row) {
             return [
                 'date' => date('d/m/Y', strtotime($row['date'])),
-                'bill_no' => (int) $row['invoice_id'],
+                'bill_no' => $row['invoice_id'] !== null ? (int) $row['invoice_id'] : null,
                 'code' => $row['item_code'],
                 'description' => $row['description'],
                 'department' => $row['department_name'] ?? '',
@@ -122,10 +173,12 @@ class SalesController
             return $response->withHeader('Location', $request->getAttribute('base_path') . '/')->withStatus(302);
         }
         $date = $request->getQueryParams()['date'] ?? '';
+        $segment = $this->normalizeSegment($request->getQueryParams()['segment'] ?? self::SEGMENT_INVOICED) ?? self::SEGMENT_INVOICED;
         $view = Twig::fromRequest($request);
         return $view->render($response, 'report.html.twig', [
             'name' => $_SESSION['user_name'],
             'date' => $date,
+            'segment' => $segment,
         ]);
     }
 
@@ -140,13 +193,20 @@ class SalesController
             return $this->json($response, ['error' => 'Date required'], 400);
         }
 
-        $rows = $this->fetchReport($request, $date);
+        $segment = $this->normalizeSegment($request->getQueryParams()['segment'] ?? self::SEGMENT_INVOICED);
+        if ($segment === null) {
+            return $this->json($response, ['error' => 'Invalid segment'], 400);
+        }
+
+        $rows = $this->fetchReport($request, $date, $segment);
         if (empty($rows)) {
             return $this->json($response, ['error' => 'No data for this date'], 400);
         }
 
-        $csvContent = $this->buildCsv($rows);
-        $filename = "sales-{$date}.csv";
+        $csvContent = $this->buildCsv($rows, $segment);
+        $filename = $segment === self::SEGMENT_NO_INVOICE
+            ? $this->nosalesCsvFilename($date)
+            : "sales-{$date}-{$segment}.csv";
 
         $response->getBody()->write($csvContent);
         return $response
@@ -160,61 +220,119 @@ class SalesController
             return $this->json($response, ['error' => 'Unauthorized'], 401);
         }
 
-        $date = ($request->getParsedBody())['date'] ?? '';
+        $body = (array) $request->getParsedBody();
+        $date = $body['date'] ?? '';
         if (!$date) {
             return $this->json($response, ['error' => 'Date required'], 400);
+        }
+
+        $mode = $this->normalizeUploadMode($body['mode'] ?? ($body['segment'] ?? 'both'));
+        if ($mode === null) {
+            return $this->json($response, ['error' => 'Invalid mode'], 400);
         }
 
         $limitCollect = ($_ENV['LIMIT_COLLECT'] ?? 'false') === 'true';
         $limit = $limitCollect ? 5 : null;
 
-        $rows = $this->fetchReport($request, $date, $limit);
-        if (empty($rows)) {
-            return $this->json($response, ['error' => 'No data for this date'], 400);
-        }
-
-        $csvContent = $this->buildCsv($rows);
-
-        $rand = substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 4);
-        $filename = "sales-{$date}-{$rand}.csv";
         $exportDir = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . 'exports';
         if (!is_dir($exportDir)) {
             mkdir($exportDir, 0755, true);
         }
-        $localPath = $exportDir . DIRECTORY_SEPARATOR . $filename;
-        file_put_contents($localPath, $csvContent);
-
-        $result = [
-            'file' => $filename,
-            'rows' => count($rows),
-        ];
 
         $uploadEnabled = ($_ENV['UPLOAD_ENABLED'] ?? 'true') === 'true';
-        if ($uploadEnabled) {
-            $sftpResult = $this->sftpUpload($localPath, $filename);
-            $result['sftp_exit_code'] = $sftpResult['exit_code'];
-            $result['sftp_output'] = $sftpResult['output'];
-            if ($sftpResult['exit_code'] !== 0) {
-                $result['error'] = 'SFTP upload failed';
-            } else {
-                // Mark sales as uploaded
-                $db = $request->getAttribute('container')->get('db');
-                $stmt = $db->prepare('UPDATE tbl_sales SET trobex = 1 WHERE date BETWEEN :from AND :to AND closed = 1 AND voidCheck = 0');
-                $stmt->execute(['from' => $date . ' 00:00:00', 'to' => $date . ' 23:59:59']);
+        $segments = $mode === 'both' ? [self::SEGMENT_INVOICED, self::SEGMENT_NO_INVOICE] : [$mode];
+        $uploads = [];
+
+        foreach ($segments as $segment) {
+            $rows = $this->fetchReport($request, $date, $segment, $limit);
+            if (empty($rows)) {
+                $uploads[] = [
+                    'segment' => $segment,
+                    'status' => 'skipped',
+                    'message' => 'No data for this segment',
+                ];
+                continue;
             }
-        } else {
-            $result['sftp_output'] = 'Upload disabled — CSV saved locally only';
+
+            $csvContent = $this->buildCsv($rows, $segment);
+            $rand = substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 4);
+            $filename = $segment === self::SEGMENT_NO_INVOICE
+                ? $this->nosalesCsvFilename($date)
+                : "sales-{$date}-{$segment}-{$rand}.csv";
+            $localPath = $exportDir . DIRECTORY_SEPARATOR . $filename;
+            file_put_contents($localPath, $csvContent);
+
+            $item = [
+                'segment' => $segment,
+                'file' => $filename,
+                'rows' => count($rows),
+            ];
+
+            if ($uploadEnabled) {
+                $sftpResult = $this->sftpUpload($localPath, $filename, $segment);
+                $item['sftp_exit_code'] = $sftpResult['exit_code'];
+                $item['sftp_output'] = $sftpResult['output'];
+                if ($sftpResult['exit_code'] === 0 && $segment === self::SEGMENT_INVOICED) {
+                    $db = $request->getAttribute('container')->get('db');
+                    $stmt = $db->prepare('UPDATE tbl_sales SET trobex = 1 WHERE date BETWEEN :from AND :to AND closed = 1 AND voidCheck = 0 AND invoice_id IS NOT NULL');
+                    $stmt->execute(['from' => $date . ' 00:00:00', 'to' => $date . ' 23:59:59']);
+                }
+                $item['status'] = $sftpResult['exit_code'] === 0 ? 'uploaded' : 'failed';
+            } else {
+                $item['status'] = 'saved';
+                $item['sftp_output'] = 'Upload disabled — CSV saved locally only';
+            }
+
+            $uploads[] = $item;
+        }
+
+        $hasData = false;
+        $hasFailure = false;
+        foreach ($uploads as $upload) {
+            if (($upload['status'] ?? '') !== 'skipped') {
+                $hasData = true;
+            }
+            if (($upload['status'] ?? '') === 'failed') {
+                $hasFailure = true;
+            }
+        }
+
+        if (!$hasData) {
+            return $this->json($response, ['error' => 'No data for this date'], 400);
+        }
+
+        $result = ['uploads' => $uploads];
+
+        // Backward-compatible keys for existing UI widgets.
+        foreach ($uploads as $upload) {
+            if (!isset($upload['file'])) {
+                continue;
+            }
+            $result['file'] = $upload['file'];
+            $result['rows'] = $upload['rows'];
+            $result['sftp_output'] = $upload['sftp_output'] ?? '';
+            break;
+        }
+
+        if ($hasFailure) {
+            $result['error'] = 'One or more uploads failed';
         }
 
         return $this->json($response, $result);
     }
 
-    private function fetchReport(Request $request, string $date, ?int $limit = null): array
+    /** No-invoice / orphan-invoice exports: nosales + YYMMDD + .csv */
+    private function nosalesCsvFilename(string $dateYmd): string
+    {
+        return 'nosales' . date('ymd', strtotime($dateYmd . ' 12:00:00')) . '.csv';
+    }
+
+    private function fetchReport(Request $request, string $date, string $segment, ?int $limit = null): array
     {
         $from = $date . ' 00:00:00';
         $to = $date . ' 23:59:59';
 
-        $sql = self::REPORT_QUERY;
+        $sql = $segment === self::SEGMENT_NO_INVOICE ? self::REPORT_QUERY_NO_INVOICE : self::REPORT_QUERY_INVOICED;
         if ($limit) {
             $sql .= " LIMIT {$limit}";
         }
@@ -225,7 +343,7 @@ class SalesController
         return $stmt->fetchAll();
     }
 
-    private function buildCsv(array $rows): string
+    private function buildCsv(array $rows, string $segment): string
     {
         $header = 'date;time;article_code;article_descr;quantity;unit_price_excl_vat;amount_excl_vat;discount_excl_vat;vat_percent;parent_article_code';
         $lines = [$header];
@@ -244,6 +362,11 @@ class SalesController
             $amountExcl = round(($qty * $unitPrice - $discount), 2);
             $discountExcl = round($discount, 2);
 
+            if ($segment === self::SEGMENT_NO_INVOICE) {
+                $unitPriceExcl = 0.00;
+                $amountExcl = 0.00;
+            }
+
             $parent = str_replace(';', '', $row['parent_code'] ?? '');
 
             $fmtQty          = number_format($qty, 2, ',', '');
@@ -261,17 +384,24 @@ class SalesController
         return implode("\n", $lines) . "\n";
     }
 
-    private function sftpUpload(string $localPath, string $filename): array
+    private function sftpUpload(string $localPath, string $filename, string $segment): array
     {
-        $host = trim($_ENV['SFTP_HOST'] ?? '');
-        $portRaw = $_ENV['SFTP_PORT'] ?? '22';
+        $prefix = $segment === self::SEGMENT_NO_INVOICE ? 'SFTP_NO_INVOICE_' : 'SFTP_';
+        $host = trim($_ENV[$prefix . 'HOST'] ?? '');
+        $portRaw = $_ENV[$prefix . 'PORT'] ?? '22';
         $port = $portRaw !== '' ? (int) $portRaw : 22;
         if ($port < 1 || $port > 65535) {
             $port = 22;
         }
-        $user = trim($_ENV['SFTP_USER'] ?? '');
-        $pass = $_ENV['SFTP_PASSWORD'] ?? '';
-        $remoteDir = trim($_ENV['SFTP_REMOTE_DIR'] ?? 'uploads', '/');
+        $user = trim($_ENV[$prefix . 'USER'] ?? '');
+        $pass = $_ENV[$prefix . 'PASSWORD'] ?? '';
+        $remoteDir = trim($_ENV[$prefix . 'REMOTE_DIR'] ?? 'uploads', '/');
+        if ($segment === self::SEGMENT_NO_INVOICE && $remoteDir === '') {
+            return [
+                'exit_code' => 1,
+                'output' => 'Missing SFTP_NO_INVOICE_REMOTE_DIR',
+            ];
+        }
         if ($remoteDir === '') {
             $remoteDir = 'uploads';
         }
@@ -279,7 +409,7 @@ class SalesController
         if ($host === '' || $user === '' || $pass === '') {
             return [
                 'exit_code' => 1,
-                'output' => 'SFTP not configured: set SFTP_HOST, SFTP_USER, and SFTP_PASSWORD in .env',
+                'output' => 'SFTP not configured for segment "' . $segment . '"',
             ];
         }
 
@@ -323,6 +453,24 @@ EXPECT;
             'exit_code' => $exitCode,
             'output' => implode("\n", $output),
         ];
+    }
+
+    private function normalizeSegment(string $segment): ?string
+    {
+        $segment = strtolower(trim($segment));
+        if ($segment === self::SEGMENT_INVOICED || $segment === self::SEGMENT_NO_INVOICE) {
+            return $segment;
+        }
+        return null;
+    }
+
+    private function normalizeUploadMode(string $mode): ?string
+    {
+        $mode = strtolower(trim($mode));
+        if ($mode === 'both') {
+            return $mode;
+        }
+        return $this->normalizeSegment($mode);
     }
 
     private function json(Response $response, array $data, int $status = 200): Response
