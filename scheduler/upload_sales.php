@@ -168,7 +168,7 @@ function buildCsv(array $rows, string $segment): string
 
 function sftpUpload(string $localPath, string $filename, string $segment, string $baseDir): array
 {
-    $prefix = $segment === SEGMENT_NO_INVOICE ? 'SFTP_NO_INVOICE_' : 'SFTP_';
+    $prefix = 'SFTP_';
     $host = trim($_ENV[$prefix . 'HOST'] ?? '');
     $portRaw = $_ENV[$prefix . 'PORT'] ?? '22';
     $port = $portRaw !== '' ? (int) $portRaw : 22;
@@ -179,7 +179,7 @@ function sftpUpload(string $localPath, string $filename, string $segment, string
     $pass = $_ENV[$prefix . 'PASSWORD'] ?? '';
     $remoteDir = trim($_ENV[$prefix . 'REMOTE_DIR'] ?? 'uploads', '/');
     if ($remoteDir === '') {
-        return ['exit_code' => 1, 'output' => "Missing {$prefix}REMOTE_DIR"];
+        $remoteDir = 'uploads';
     }
 
     if ($host === '' || $user === '' || $pass === '') {

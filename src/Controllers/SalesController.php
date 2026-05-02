@@ -348,7 +348,7 @@ class SalesController
         return $this->json($response, $result);
     }
 
-    /** No-invoice / orphan-invoice exports: nosales + YYMMDD + .csv */
+    /** Same SFTP as invoiced; no-sales is distinguished by this filename and buildCsv line rules. */
     private function nosalesCsvFilename(string $dateYmd): string
     {
         return 'nosales' . date('ymd', strtotime($dateYmd . ' 12:00:00')) . '.csv';
@@ -411,9 +411,10 @@ class SalesController
         return implode("\n", $lines) . "\n";
     }
 
+    /** All segments use SFTP_*; no_invoice differs by remote filename + CSV fields only. */
     private function sftpUpload(string $localPath, string $filename, string $segment): array
     {
-        $prefix = $segment === self::SEGMENT_NO_INVOICE ? 'SFTP_NO_INVOICE_' : 'SFTP_';
+        $prefix = 'SFTP_';
         $host = trim($_ENV[$prefix . 'HOST'] ?? '');
         $portRaw = $_ENV[$prefix . 'PORT'] ?? '22';
         $port = $portRaw !== '' ? (int) $portRaw : 22;
@@ -423,12 +424,6 @@ class SalesController
         $user = trim($_ENV[$prefix . 'USER'] ?? '');
         $pass = $_ENV[$prefix . 'PASSWORD'] ?? '';
         $remoteDir = trim($_ENV[$prefix . 'REMOTE_DIR'] ?? 'uploads', '/');
-        if ($segment === self::SEGMENT_NO_INVOICE && $remoteDir === '') {
-            return [
-                'exit_code' => 1,
-                'output' => 'Missing SFTP_NO_INVOICE_REMOTE_DIR',
-            ];
-        }
         if ($remoteDir === '') {
             $remoteDir = 'uploads';
         }

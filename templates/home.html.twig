@@ -187,8 +187,6 @@
                         <th class="text-left">Date</th>
                         <th class="text-right">Sales</th>
                         <th class="text-right">Total</th>
-                        <th class="text-center"><span class="text-xs font-semibold text-slate-600">Sales SFTP</span></th>
-                        <th class="text-center"><span class="text-xs font-semibold text-slate-600">No sales SFTP</span></th>
                         <th class="text-right">Actions</th>
                     </tr>
                 </thead>
@@ -288,15 +286,9 @@
             $content.html(message);
         }
 
-        function sftpStatusBadge(sent) {
-            if (sent) {
-                return '<span class="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full"><i class="fa-solid fa-check text-[10px]"></i> Sent</span>';
-            }
-            return '<span class="inline-flex items-center gap-1 text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full"><i class="fa-solid fa-minus text-[10px]"></i> Pending</span>';
-        }
-
         function uploadSales(date, mode, btn) {
             var $btn = $(btn);
+            $btn.closest('details.actions-dropdown').removeAttr('open');
             var origHtml = $btn.html();
             $btn.addClass('loading').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Uploading...');
 
@@ -366,20 +358,6 @@
                         },
                     },
                     {
-                        data: 'uploaded_invoiced',
-                        className: 'text-center',
-                        render: function (data) {
-                            return sftpStatusBadge(data);
-                        },
-                    },
-                    {
-                        data: 'uploaded_no_sales',
-                        className: 'text-center',
-                        render: function (data) {
-                            return sftpStatusBadge(data);
-                        },
-                    },
-                    {
                         data: null,
                         orderable: false,
                         searchable: false,
@@ -389,22 +367,30 @@
                             var dl = basePath + '/api/sales/download?date=' + encodeURIComponent(row.date) + '&segment=';
                             var download =
                                 '<details class="actions-dropdown relative inline-block align-middle">' +
-                                '<summary class="btn btn-view cursor-pointer">' +
+                                '<summary class="btn btn-view cursor-pointer select-none">' +
                                 '<i class="fa-solid fa-download text-[11px]"></i> CSV <i class="fa-solid fa-caret-down text-[9px] opacity-70"></i>' +
                                 '</summary>' +
-                                '<div class="absolute right-0 mt-1 z-30 min-w-[10.5rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg text-left">' +
-                                '<a class="block px-3 py-2 text-xs text-slate-700 hover:bg-sky-50" href="' + dl + 'invoiced">Sales</a>' +
-                                '<a class="block px-3 py-2 text-xs text-slate-700 hover:bg-sky-50" href="' + dl + 'no_invoice">No sales</a>' +
+                                '<div class="absolute right-0 mt-1 z-30 min-w-[11rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg text-left">' +
+                                '<a class="block px-3 py-2 text-xs text-slate-700 hover:bg-sky-50" href="' + dl + 'invoiced" onclick="this.closest(\'details\').removeAttribute(\'open\')">Sales</a>' +
+                                '<a class="block px-3 py-2 text-xs text-slate-700 hover:bg-sky-50" href="' + dl + 'no_invoice" onclick="this.closest(\'details\').removeAttribute(\'open\')">No sales</a>' +
                                 '</div></details> ';
                             if (row.daily_closed) {
+                                var invDone = row.uploaded_invoiced;
+                                var noDone = row.uploaded_no_sales;
+                                var salesUp = invDone
+                                    ? '<button type="button" disabled class="block w-full text-left px-3 py-2 text-xs text-slate-400 cursor-not-allowed bg-slate-50 border-0">Sales <i class="fa-solid fa-check text-green-600 ml-1"></i></button>'
+                                    : '<button type="button" class="block w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-green-50 border-0 bg-transparent" onclick="uploadSales(\'' + row.date + '\', \'invoiced\', this)">Sales</button>';
+                                var noSalesUp = noDone
+                                    ? '<button type="button" disabled class="block w-full text-left px-3 py-2 text-xs text-slate-400 cursor-not-allowed bg-slate-50 border-0">No sales <i class="fa-solid fa-check text-green-600 ml-1"></i></button>'
+                                    : '<button type="button" class="block w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-green-50 border-0 bg-transparent" onclick="uploadSales(\'' + row.date + '\', \'no_invoice\', this)">No sales</button>';
                                 var upload =
                                     '<details class="actions-dropdown relative inline-block align-middle">' +
-                                    '<summary class="btn btn-upload cursor-pointer">' +
+                                    '<summary class="btn btn-upload cursor-pointer select-none">' +
                                     '<i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Upload <i class="fa-solid fa-caret-down text-[9px] opacity-70"></i>' +
                                     '</summary>' +
-                                    '<div class="absolute right-0 mt-1 z-30 min-w-[10.5rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg text-left">' +
-                                    '<button type="button" class="block w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-green-50" onclick="uploadSales(\'' + row.date + '\', \'invoiced\', this)">Sales</button>' +
-                                    '<button type="button" class="block w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-green-50" onclick="uploadSales(\'' + row.date + '\', \'no_invoice\', this)">No sales</button>' +
+                                    '<div class="absolute right-0 mt-1 z-30 min-w-[11rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg text-left">' +
+                                    salesUp +
+                                    noSalesUp +
                                     '</div></details>';
                                 return view + download + upload;
                             }
@@ -417,6 +403,22 @@
                     search: '',
                     searchPlaceholder: 'Search...',
                 },
+            });
+
+            $(document).on('toggle', '#sales-table details.actions-dropdown', function () {
+                if (!this.open) {
+                    return;
+                }
+                $('#sales-table details.actions-dropdown').not(this).each(function () {
+                    this.removeAttribute('open');
+                });
+            });
+
+            $(document).on('click', function (e) {
+                if ($(e.target).closest('#sales-table details.actions-dropdown').length) {
+                    return;
+                }
+                $('#sales-table details.actions-dropdown[open]').removeAttr('open');
             });
         });
     </script>
