@@ -355,6 +355,7 @@
         function buildCsvMenu(date) {
             var base = basePath + '/api/sales/download?date=' + encodeURIComponent(date) + '&category=';
             var html = '';
+            var number = 1;
 
             ['sales', 'non_sales'].forEach(function (type) {
                 var group = categories.filter(function (c) { return c.type === type; });
@@ -363,7 +364,8 @@
                 group.forEach(function (c) {
                     html += '<a class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50" ' +
                         'href="' + base + encodeURIComponent(c.key) + '" ' +
-                        'onclick="this.closest(\'details\').removeAttribute(\'open\')">' + escapeHtml(c.label) + '</a>';
+                        'onclick="this.closest(\'details\').removeAttribute(\'open\')">' + number + '. ' + escapeHtml(c.label) + '</a>';
+                    number++;
                 });
             });
 
@@ -380,6 +382,7 @@
         function buildUploadMenu(row) {
             var done = row.uploaded_categories || {};
             var remaining = row.category_count - row.uploaded_count;
+            var number = 1;
 
             var html = remaining > 0
                 ? '<button type="button" class="block w-full text-left px-3 py-2 text-xs font-semibold text-green-700 hover:bg-green-50 border-0 bg-transparent" ' +
@@ -394,9 +397,10 @@
                 group.forEach(function (c) {
                     html += done[c.key]
                         ? '<button type="button" disabled class="block w-full text-left px-3 py-1.5 text-xs text-slate-400 cursor-not-allowed bg-slate-50 border-0">' +
-                          escapeHtml(c.label) + ' <i class="fa-solid fa-check text-green-600 ml-1"></i></button>'
+                          number + '. ' + escapeHtml(c.label) + ' <i class="fa-solid fa-check text-green-600 ml-1"></i></button>'
                         : '<button type="button" class="block w-full text-left px-3 py-1.5 text-xs text-slate-700 hover:bg-green-50 border-0 bg-transparent" ' +
-                          'onclick="uploadSales(\'' + row.date + '\', \'' + c.key + '\', this)">' + escapeHtml(c.label) + '</button>';
+                          'onclick="uploadSales(\'' + row.date + '\', \'' + c.key + '\', this)">' + number + '. ' + escapeHtml(c.label) + '</button>';
+                    number++;
                 });
             });
 
