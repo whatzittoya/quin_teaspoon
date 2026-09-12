@@ -6,7 +6,7 @@
  * into its own SFTP folder under SFTP_REMOTE_DIR.
  *
  * Usage: php upload_sales.php [YYYY-MM-DD] [category-key]
- *   No date     -> today.
+ *   No date     -> yesterday (the scheduler runs the following morning).
  *   No category -> all 18 categories.
  */
 
@@ -64,7 +64,7 @@ try {
     exit(1);
 }
 
-$date = $argv[1] ?? date('Y-m-d');
+$date = $argv[1] ?? date('Y-m-d', strtotime('-1 day'));
 
 $categories = SalesCategories::all();
 if (!empty($argv[2])) {
