@@ -98,11 +98,6 @@ final class SalesExport
                 AND sl.quantity > 0
                 AND (sl.unitPrice > 0 OR item.noReport = 0)
                 AND dept.name IN ({$placeholders})
-                AND ROUND(
-                    ((sl.quantity - sl.voidQuantity) * sl.unitPrice)
-                    - sl.discountAmount + sl.serviceChargeAmount + sl.tax1Amount,
-                    2
-                ) <> 0
             {$orderBy}
         ";
     }
