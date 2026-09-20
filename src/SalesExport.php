@@ -294,7 +294,7 @@ final class SalesExport
      * Keeps tbl_sales.trobex meaningful for anything downstream still reading it:
      * set once every category that had data for the date has been uploaded.
      */
-    public static function markTrobexIfComplete(PDO $db, string $date): bool
+    public static function markTrobexIfComplete(PDO $db, string $date, ?callable $categoryDb = null): bool
     {
         $uploaded = self::uploadedByDate($db, $date)[$date] ?? [];
 
@@ -303,7 +303,8 @@ final class SalesExport
                 continue;
             }
             // Not uploaded — only acceptable if the category genuinely had no rows.
-            if (!empty(self::fetchRows($db, $date, $category, 1))) {
+            $sourceDb = $categoryDb ? $categoryDb($category) : $db;
+            if (!empty(self::fetchRows($sourceDb, $date, $category, 1))) {
                 return false;
             }
         }

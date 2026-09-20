@@ -10,6 +10,8 @@
  *   No category -> all 18 categories.
  */
 
+use App\DatabaseConnectionFactory;
+use App\EnvConfig;
 use App\SalesCategories;
 use App\SalesExport;
 
@@ -21,22 +23,6 @@ function logLine(string $level, string $message): void
     echo date('Y-m-d H:i:s') . " [{$level}] {$message}\n";
 }
 
-function loadEnv(string $envFile): void
-{
-    if (!file_exists($envFile)) {
-        return;
-    }
-    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
-            continue;
-        }
-        [$key, $value] = explode('=', $line, 2);
-        $_ENV[trim($key)] = trim($value);
-    }
-}
-
 // Check enabled flag
 $enabledFile = __DIR__ . DIRECTORY_SEPARATOR . '.enabled';
 if (!file_exists($enabledFile)) {
@@ -44,22 +30,12 @@ if (!file_exists($enabledFile)) {
     exit(0);
 }
 
-loadEnv($baseDir . DIRECTORY_SEPARATOR . '.env');
-
-$host = $_ENV['DB_HOST'] ?? '127.0.0.1';
-$port = $_ENV['DB_PORT'] ?? '3306';
-$dbname = $_ENV['DB_DATABASE'] ?? 'db_parklife';
-$user = $_ENV['DB_USERNAME'] ?? 'root';
-$pass = $_ENV['DB_PASSWORD'] ?? '';
+EnvConfig::load($baseDir . DIRECTORY_SEPARATOR . '.env');
+$dbFactory = new DatabaseConnectionFactory($_ENV);
 
 try {
-    $db = new PDO(
-        "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4",
-        $user,
-        $pass,
-        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
-    );
-} catch (PDOException $e) {
+    $db = $dbFactory->default();
+} catch (Throwable $e) {
     logLine('ERROR', 'DB connection failed: ' . $e->getMessage());
     exit(1);
 }
@@ -105,7 +81,14 @@ foreach ($categories as $category) {
         continue;
     }
 
-    $rows = SalesExport::fetchRows($db, $date, $category);
+    try {
+        $sourceDb = $dbFactory->forCategory($category);
+        $rows = SalesExport::fetchRows($sourceDb, $date, $category);
+    } catch (Throwable $e) {
+        $hadError = true;
+        logLine('ERROR', "{$key}: database query failed: " . $e->getMessage());
+        continue;
+    }
     if (empty($rows)) {
         logLine('SKIP', "{$key}: no data");
         continue;
@@ -142,7 +125,11 @@ if (!$anyData) {
     exit(0);
 }
 
-if ($uploadEnabled && !$hadError && SalesExport::markTrobexIfComplete($db, $date)) {
+if ($uploadEnabled && !$hadError && SalesExport::markTrobexIfComplete(
+    $db,
+    $date,
+    static fn (array $category) => $dbFactory->forCategory($category)
+)) {
     logLine('OK', "All categories uploaded for {$date} — marked trobex = 1");
 }
 

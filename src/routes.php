@@ -4,6 +4,10 @@ use App\Controllers\AuthController;
 use App\Controllers\HomeController;
 use App\Controllers\SalesController;
 use App\Controllers\SchedulerController;
+use App\Controllers\SetupController;
+
+$app->get('/setup', [SetupController::class, 'page']);
+$app->post('/setup', [SetupController::class, 'save']);
 
 $app->get('/', [AuthController::class, 'loginPage']);
 $app->post('/login', [AuthController::class, 'login']);

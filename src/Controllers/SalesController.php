@@ -2,6 +2,7 @@
 
 namespace App\Controllers;
 
+use App\DatabaseConnectionFactory;
 use App\SalesCategories;
 use App\SalesExport;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -80,7 +81,7 @@ class SalesController
             return $this->json($response, ['error' => 'Invalid category'], 400);
         }
 
-        $rows = SalesExport::fetchRows($this->db($request), $date, $category);
+        $rows = SalesExport::fetchRows($this->dbFactory($request)->forCategory($category), $date, $category);
 
         $data = array_map(function ($row) {
             return [
@@ -132,7 +133,7 @@ class SalesController
             return $this->json($response, ['error' => 'Invalid category'], 400);
         }
 
-        $rows = SalesExport::fetchRows($this->db($request), $date, $category);
+        $rows = SalesExport::fetchRows($this->dbFactory($request)->forCategory($category), $date, $category);
         if (empty($rows)) {
             return $this->json($response, ['error' => 'No data for this category'], 400);
         }
@@ -183,7 +184,12 @@ class SalesController
         $hasFailure = false;
 
         foreach ($categories as $category) {
-            $rows = SalesExport::fetchRows($db, $date, $category, $limit);
+            $rows = SalesExport::fetchRows(
+                $this->dbFactory($request)->forCategory($category),
+                $date,
+                $category,
+                $limit
+            );
             if (empty($rows)) {
                 $uploads[] = [
                     'category' => $category['key'],
@@ -236,7 +242,12 @@ class SalesController
         }
 
         if ($uploadEnabled && !$hasFailure) {
-            SalesExport::markTrobexIfComplete($db, $date);
+            $factory = $this->dbFactory($request);
+            SalesExport::markTrobexIfComplete(
+                $db,
+                $date,
+                static fn (array $category) => $factory->forCategory($category)
+            );
         }
 
         $result = ['uploads' => $uploads];
@@ -268,6 +279,11 @@ class SalesController
     private function db(Request $request): \PDO
     {
         return $request->getAttribute('container')->get('db');
+    }
+
+    private function dbFactory(Request $request): DatabaseConnectionFactory
+    {
+        return $request->getAttribute('container')->get('db_factory');
     }
 
     private function json(Response $response, array $data, int $status = 200): Response

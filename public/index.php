@@ -1,45 +1,26 @@
 <?php
 
 use DI\ContainerBuilder;
+use App\DatabaseConnectionFactory;
+use App\EnvConfig;
 use Slim\Factory\AppFactory;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-// Load .env
 $envFile = __DIR__ . '/../.env';
-if (file_exists($envFile)) {
-    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        if (str_starts_with(trim($line), '#')) continue;
-        [$key, $value] = explode('=', $line, 2);
-        $_ENV[trim($key)] = trim($value);
-    }
-}
+$config = EnvConfig::load($envFile);
 
 session_start();
 
 $containerBuilder = new ContainerBuilder();
 
 $containerBuilder->addDefinitions([
-    'db' => function () {
-        $host = $_ENV['DB_HOST'] ?? '127.0.0.1';
-        $port = $_ENV['DB_PORT'] ?? '3306';
-        $dbname = $_ENV['DB_DATABASE'] ?? 'db_parklife';
-        $user = $_ENV['DB_USERNAME'] ?? 'root';
-        $pass = $_ENV['DB_PASSWORD'] ?? '';
-
-        return new PDO(
-            "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4",
-            $user,
-            $pass,
-            [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ]
-        );
-    },
+    'config' => $config,
+    'env_file' => $envFile,
+    'db_factory' => fn () => new DatabaseConnectionFactory($_ENV),
+    'db' => fn (\Psr\Container\ContainerInterface $container) => $container->get('db_factory')->default(),
     'view' => function () {
         return Twig::create(__DIR__ . '/../templates', ['cache' => false]);
     },
@@ -68,6 +49,16 @@ require __DIR__ . '/../src/routes.php';
 $app->add(function ($request, $handler) use ($container, $basePath) {
     $request = $request->withAttribute('container', $container);
     $request = $request->withAttribute('base_path', $basePath);
+    return $handler->handle($request);
+});
+
+// First-run setup is the only reachable page until .env has been created.
+$app->add(function ($request, $handler) use ($envFile, $basePath) {
+    $setupPath = ($basePath ?: '') . '/setup';
+    if (!is_file($envFile) && rtrim($request->getUri()->getPath(), '/') !== rtrim($setupPath, '/')) {
+        $response = new \Slim\Psr7\Response();
+        return $response->withHeader('Location', $setupPath)->withStatus(302);
+    }
     return $handler->handle($request);
 });
 
