@@ -7,126 +7,164 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .field { width: 100%; border: 1px solid #e2e8f0; border-radius: .75rem; background: #f8fafc; padding: .65rem .85rem; font-size: .875rem; outline: none; transition: .15s; }
+        .field:focus { border-color: #38bdf8; background: white; box-shadow: 0 0 0 3px rgba(56,189,248,.12); }
+        .field:disabled { opacity: .55; cursor: not-allowed; }
+        .mini-label { display: block; margin-bottom: .35rem; font-size: .68rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .045em; }
+    </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-700">
-    <div class="max-w-5xl mx-auto px-5 py-10">
+    <div class="max-w-7xl mx-auto px-5 py-10">
         <div class="flex items-center justify-between mb-7">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-sky-600 rounded-xl flex items-center justify-center text-white text-lg font-bold">Q</div>
                 <div>
                     <h1 class="text-2xl font-bold text-slate-800">System setup</h1>
-                    <p class="text-sm text-slate-500">Database sources and SFTP delivery</p>
+                    <p class="text-sm text-slate-500">Database sources, CSV rules, and SFTP delivery</p>
                 </div>
             </div>
-            {% if not first_run %}
-            <a href="{{ base_path }}/home" class="text-sm font-medium text-sky-700 hover:text-sky-800">Back to dashboard</a>
-            {% endif %}
+            {% if not first_run %}<a href="{{ base_path }}/home" class="text-sm font-medium text-sky-700 hover:text-sky-800">Back to dashboard</a>{% endif %}
         </div>
 
-        {% if first_run %}
-        <div class="mb-5 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-            Complete the initial configuration. You will be sent to sign in after it is saved.
-        </div>
-        {% endif %}
-        {% if error %}
-        <div class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
-        {% endif %}
-        {% if success %}
-        <div class="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{{ success }}</div>
-        {% endif %}
+        {% if first_run %}<div class="notice border-sky-200 bg-sky-50 text-sky-800">Complete the initial configuration. You will be sent to sign in after it is saved.</div>{% endif %}
+        {% if error %}<div class="notice border-red-200 bg-red-50 text-red-700">{{ error }}</div>{% endif %}
+        {% if success %}<div class="notice border-green-200 bg-green-50 text-green-700">{{ success }}</div>{% endif %}
 
         <form method="POST" action="{{ base_path }}/setup" class="space-y-6">
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <h2 class="font-semibold text-slate-800 mb-1">MySQL connection</h2>
-                <p class="text-sm text-slate-400 mb-5">One server and login are shared by the default and category databases.</p>
+            <section class="card">
+                <h2 class="section-title">MySQL connection</h2>
+                <p class="section-help">One server and login are shared by the default and category databases.</p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="block md:col-span-2">
-                        <span class="block text-sm font-medium mb-1.5">Host</span>
-                        <input name="db_host" required value="{{ form.db_host }}" class="field" placeholder="127.0.0.1">
-                    </label>
-                    <label class="block">
-                        <span class="block text-sm font-medium mb-1.5">Port</span>
-                        <input name="db_port" required inputmode="numeric" value="{{ form.db_port }}" class="field" placeholder="3306">
-                    </label>
-                    <label class="block">
-                        <span class="block text-sm font-medium mb-1.5">Default database</span>
-                        <input id="default-database" name="db_database" required value="{{ form.db_database }}" class="field" placeholder="db_parklife">
-                    </label>
-                    <label class="block">
-                        <span class="block text-sm font-medium mb-1.5">Username</span>
-                        <input name="db_username" required value="{{ form.db_username }}" class="field" autocomplete="username">
-                    </label>
-                    <label class="block">
-                        <span class="block text-sm font-medium mb-1.5">Password</span>
-                        <input type="password" name="db_password" value="" class="field" autocomplete="new-password" placeholder="{% if first_run %}May be empty{% else %}Leave blank to keep current password{% endif %}">
-                    </label>
+                    <label class="block md:col-span-2"><span class="label">Host</span><input name="db_host" required value="{{ form.db_host }}" class="field" placeholder="127.0.0.1"></label>
+                    <label class="block"><span class="label">Port</span><input name="db_port" required inputmode="numeric" value="{{ form.db_port }}" class="field" placeholder="3306"></label>
+                    <label class="block"><span class="label">Default database</span><input name="db_database" required value="{{ form.db_database }}" class="field" placeholder="db_parklife"></label>
+                    <label class="block"><span class="label">Username</span><input name="db_username" required value="{{ form.db_username }}" class="field" autocomplete="username"></label>
+                    <label class="block"><span class="label">Password</span><input type="password" name="db_password" class="field" autocomplete="new-password" placeholder="{% if first_run %}May be empty{% else %}Leave blank to keep current password{% endif %}"></label>
                 </div>
             </section>
 
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <h2 class="font-semibold text-slate-800 mb-1">Category source databases</h2>
-                <p class="text-sm text-slate-400 mb-5">Leave a field empty to use the default database.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    {% for c in categories %}
-                    <label class="block">
-                        <span class="flex items-center justify-between text-sm font-medium mb-1.5">
-                            <span>{{ loop.index }}. {{ c.label }}</span>
-                            <span class="text-[10px] uppercase tracking-wide text-slate-400">{{ c.type == 'sales' ? 'Sales' : 'No sales' }}</span>
-                        </span>
-                        <input name="category_db[{{ c.key }}]" value="{{ form.category_db[c.key] ?? '' }}" class="field category-db" placeholder="Use default database">
-                    </label>
+            <section class="card">
+                <h2 class="section-title">CSV format</h2>
+                <p class="section-help">This setting is applied by the server and does not depend on the Windows regional format.</p>
+                <label class="block max-w-md">
+                    <span class="label">Date format in CSV files</span>
+                    <select name="csv_date_format" class="field">
+                        <option value="d/m/Y" {% if form.csv_date_format == 'd/m/Y' %}selected{% endif %}>Day / month / year — 31/12/2026</option>
+                        <option value="m/d/Y" {% if form.csv_date_format == 'm/d/Y' %}selected{% endif %}>Month / day / year — 12/31/2026</option>
+                        <option value="Y-m-d" {% if form.csv_date_format == 'Y-m-d' %}selected{% endif %}>ISO year-month-day — 2026-12-31</option>
+                    </select>
+                </label>
+            </section>
+
+            <section class="card">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+                    <div><h2 class="section-title">Export types</h2><p class="section-help mb-0">Types control invoice selection, prices, and CSV filenames.</p></div>
+                    <button type="button" id="add-type" class="add-button">+ Add type</button>
+                </div>
+                <div id="type-rows" class="space-y-3">
+                    {% for type in form.types %}
+                    <div class="type-row rounded-xl border border-slate-200 bg-slate-50 p-4 grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <label class="md:col-span-2"><span class="mini-label">Key</span><input required name="types[{{ loop.index0 }}][key]" value="{{ type.key }}" class="field type-key" placeholder="compliment"></label>
+                        <label class="md:col-span-2"><span class="mini-label">Label</span><input required name="types[{{ loop.index0 }}][label]" value="{{ type.label }}" class="field" placeholder="Compliment"></label>
+                        <label class="md:col-span-2"><span class="mini-label">Invoice rule</span><select name="types[{{ loop.index0 }}][invoice_mode]" class="field"><option value="required" {% if type.invoice_mode == 'required' %}selected{% endif %}>Invoice required</option><option value="missing" {% if type.invoice_mode == 'missing' %}selected{% endif %}>No invoice</option><option value="any" {% if type.invoice_mode == 'any' %}selected{% endif %}>Any invoice state</option></select></label>
+                        <label class="md:col-span-2"><span class="mini-label">Filename</span><select name="types[{{ loop.index0 }}][filename_mode]" class="field"><option value="unique" {% if type.filename_mode == 'unique' %}selected{% endif %}>Category + token</option><option value="daily" {% if type.filename_mode == 'daily' %}selected{% endif %}>Daily fixed name</option></select></label>
+                        <label class="md:col-span-2"><span class="mini-label">File prefix</span><input required name="types[{{ loop.index0 }}][filename_prefix]" value="{{ type.filename_prefix }}" class="field" placeholder="compliment"></label>
+                        <div class="md:col-span-2 flex items-end justify-between gap-2 pb-2"><label class="inline-flex items-center gap-2 text-xs font-medium"><input type="checkbox" name="types[{{ loop.index0 }}][zero_prices]" value="1" {% if type.zero_prices %}checked{% endif %} class="accent-sky-600"> Zero prices</label><button type="button" class="remove-row text-xs font-semibold text-red-500 hover:text-red-700">Remove</button></div>
+                    </div>
                     {% endfor %}
                 </div>
             </section>
 
-            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-                <div class="flex items-start justify-between gap-4 mb-5">
-                    <div>
-                        <h2 class="font-semibold text-slate-800 mb-1">SFTP delivery</h2>
-                        <p class="text-sm text-slate-400">Credentials are required only when uploads are enabled.</p>
-                    </div>
-                    <label class="inline-flex items-center gap-2 text-sm font-medium cursor-pointer">
-                        <input id="upload-enabled" type="checkbox" name="upload_enabled" value="1" {% if form.upload_enabled %}checked{% endif %} class="w-4 h-4 accent-sky-600">
-                        Enable uploads
-                    </label>
+            <section class="card">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
+                    <div><h2 class="section-title">Categories</h2><p class="section-help mb-0">Departments are comma-separated. Leave source database blank to inherit the default database.</p></div>
+                    <button type="button" id="add-category" class="add-button">+ Add category</button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="block md:col-span-2">
-                        <span class="block text-sm font-medium mb-1.5">Host</span>
-                        <input name="sftp_host" value="{{ form.sftp_host }}" class="field sftp-field" placeholder="example.com">
-                    </label>
-                    <label class="block">
-                        <span class="block text-sm font-medium mb-1.5">Port</span>
-                        <input name="sftp_port" inputmode="numeric" value="{{ form.sftp_port }}" class="field sftp-field" placeholder="22">
-                    </label>
-                    <label class="block">
-                        <span class="block text-sm font-medium mb-1.5">Remote root directory</span>
-                        <input name="sftp_remote_dir" value="{{ form.sftp_remote_dir }}" class="field sftp-field" placeholder="uploads">
-                    </label>
-                    <label class="block">
-                        <span class="block text-sm font-medium mb-1.5">Username</span>
-                        <input name="sftp_user" value="{{ form.sftp_user }}" class="field sftp-field" autocomplete="username">
-                    </label>
-                    <label class="block">
-                        <span class="block text-sm font-medium mb-1.5">Password</span>
-                        <input type="password" name="sftp_password" value="" class="field sftp-field" autocomplete="new-password" placeholder="{% if first_run %}SFTP password{% else %}Leave blank to keep current password{% endif %}">
-                    </label>
+                <div id="category-rows" class="space-y-3">
+                    {% for c in form.categories %}
+                    <div class="category-row rounded-xl border border-slate-200 bg-white shadow-sm p-4 grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <label class="md:col-span-2"><span class="mini-label">Key</span><input required name="categories[{{ loop.index0 }}][key]" value="{{ c.key }}" class="field" placeholder="bev-compl"></label>
+                        <label class="md:col-span-2"><span class="mini-label">Label</span><input required name="categories[{{ loop.index0 }}][label]" value="{{ c.label }}" class="field" placeholder="Beverage"></label>
+                        <label class="md:col-span-2"><span class="mini-label">Type</span><select name="categories[{{ loop.index0 }}][type]" data-selected="{{ c.type }}" class="field category-type"></select></label>
+                        <label class="md:col-span-3"><span class="mini-label">Departments</span><input required name="categories[{{ loop.index0 }}][departments]" value="{{ c.departments_text ?? (c.departments is iterable ? c.departments|join(', ') : c.departments) }}" class="field" placeholder="BEVERAGE, EVENT"></label>
+                        <label class="md:col-span-2"><span class="mini-label">SFTP folder</span><input required name="categories[{{ loop.index0 }}][folder]" value="{{ c.folder }}" class="field" placeholder="bev compl"></label>
+                        <div class="md:col-span-1 flex items-end justify-end pb-2"><button type="button" class="remove-row text-xs font-semibold text-red-500 hover:text-red-700">Remove</button></div>
+                        <label class="md:col-span-12"><span class="mini-label">Source database override</span><input name="categories[{{ loop.index0 }}][database]" value="{{ c.database ?? '' }}" class="field" placeholder="Use default database"></label>
+                    </div>
+                    {% endfor %}
                 </div>
             </section>
 
-            <div class="flex justify-end">
-                <button type="submit" class="px-6 py-2.5 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold shadow-sm transition">
-                    Validate and save
-                </button>
-            </div>
+            <section class="card">
+                <div class="flex items-start justify-between gap-4 mb-5"><div><h2 class="section-title">SFTP delivery</h2><p class="section-help mb-0">Credentials are required only when uploads are enabled.</p></div><label class="inline-flex items-center gap-2 text-sm font-medium cursor-pointer"><input id="upload-enabled" type="checkbox" name="upload_enabled" value="1" {% if form.upload_enabled %}checked{% endif %} class="w-4 h-4 accent-sky-600"> Enable uploads</label></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="block md:col-span-2"><span class="label">Host</span><input name="sftp_host" value="{{ form.sftp_host }}" class="field sftp-field" placeholder="example.com"></label>
+                    <label class="block"><span class="label">Port</span><input name="sftp_port" inputmode="numeric" value="{{ form.sftp_port }}" class="field sftp-field" placeholder="22"></label>
+                    <label class="block"><span class="label">Remote root directory</span><input name="sftp_remote_dir" value="{{ form.sftp_remote_dir }}" class="field sftp-field" placeholder="uploads"></label>
+                    <label class="block"><span class="label">Username</span><input name="sftp_user" value="{{ form.sftp_user }}" class="field sftp-field" autocomplete="username"></label>
+                    <label class="block"><span class="label">Password</span><input type="password" name="sftp_password" class="field sftp-field" autocomplete="new-password" placeholder="{% if first_run %}SFTP password{% else %}Leave blank to keep current password{% endif %}"></label>
+                </div>
+            </section>
+
+            <div class="flex justify-end"><button type="submit" class="px-6 py-2.5 rounded-full bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold shadow-sm transition">Validate and save</button></div>
         </form>
     </div>
 
+    <template id="type-template"><div class="type-row rounded-xl border border-slate-200 bg-slate-50 p-4 grid grid-cols-1 md:grid-cols-12 gap-3"><label class="md:col-span-2"><span class="mini-label">Key</span><input required name="types[__INDEX__][key]" class="field type-key" placeholder="compliment"></label><label class="md:col-span-2"><span class="mini-label">Label</span><input required name="types[__INDEX__][label]" class="field" placeholder="Compliment"></label><label class="md:col-span-2"><span class="mini-label">Invoice rule</span><select name="types[__INDEX__][invoice_mode]" class="field"><option value="required">Invoice required</option><option value="missing">No invoice</option><option value="any">Any invoice state</option></select></label><label class="md:col-span-2"><span class="mini-label">Filename</span><select name="types[__INDEX__][filename_mode]" class="field"><option value="unique">Category + token</option><option value="daily">Daily fixed name</option></select></label><label class="md:col-span-2"><span class="mini-label">File prefix</span><input required name="types[__INDEX__][filename_prefix]" class="field" placeholder="compliment"></label><div class="md:col-span-2 flex items-end justify-between gap-2 pb-2"><label class="inline-flex items-center gap-2 text-xs font-medium"><input type="checkbox" name="types[__INDEX__][zero_prices]" value="1" class="accent-sky-600"> Zero prices</label><button type="button" class="remove-row text-xs font-semibold text-red-500">Remove</button></div></div></template>
+    <template id="category-template"><div class="category-row rounded-xl border border-slate-200 bg-white shadow-sm p-4 grid grid-cols-1 md:grid-cols-12 gap-3"><label class="md:col-span-2"><span class="mini-label">Key</span><input required name="categories[__INDEX__][key]" class="field" placeholder="new-category"></label><label class="md:col-span-2"><span class="mini-label">Label</span><input required name="categories[__INDEX__][label]" class="field" placeholder="New category"></label><label class="md:col-span-2"><span class="mini-label">Type</span><select name="categories[__INDEX__][type]" class="field category-type"></select></label><label class="md:col-span-3"><span class="mini-label">Departments</span><input required name="categories[__INDEX__][departments]" class="field" placeholder="BEVERAGE, EVENT"></label><label class="md:col-span-2"><span class="mini-label">SFTP folder</span><input required name="categories[__INDEX__][folder]" class="field" placeholder="new folder"></label><div class="md:col-span-1 flex items-end justify-end pb-2"><button type="button" class="remove-row text-xs font-semibold text-red-500">Remove</button></div><label class="md:col-span-12"><span class="mini-label">Source database override</span><input name="categories[__INDEX__][database]" class="field" placeholder="Use default database"></label></div></template>
+
     <style>
-        .field { width: 100%; border: 1px solid #e2e8f0; border-radius: .75rem; background: #f8fafc; padding: .65rem .85rem; font-size: .875rem; outline: none; transition: .15s; }
-        .field:focus { border-color: #38bdf8; background: white; box-shadow: 0 0 0 3px rgba(56,189,248,.12); }
-        .field:disabled { opacity: .55; cursor: not-allowed; }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,.04); padding: 1.5rem; }
+        .section-title { font-weight: 600; color: #1e293b; margin-bottom: .25rem; }
+        .section-help { color: #94a3b8; font-size: .875rem; margin-bottom: 1.25rem; }
+        .label { display: block; font-size: .875rem; font-weight: 500; margin-bottom: .375rem; }
+        .notice { margin-bottom: 1.25rem; border-width: 1px; border-radius: .75rem; padding: .75rem 1rem; font-size: .875rem; }
+        .add-button { border: 1px solid #bae6fd; background: #f0f9ff; color: #0369a1; border-radius: .75rem; padding: .55rem .9rem; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+        .add-button:hover { background: #e0f2fe; }
     </style>
+    <script>
+        let typeIndex = {{ form.types|length }};
+        let categoryIndex = {{ form.categories|length }};
+
+        function escapeHtml(value) {
+            const div = document.createElement('div'); div.textContent = value; return div.innerHTML;
+        }
+        function refreshTypeOptions() {
+            const types = Array.from(document.querySelectorAll('.type-row')).map(row => ({
+                key: row.querySelector('.type-key').value.trim(),
+                label: row.querySelector('input[name$="[label]"]').value.trim()
+            })).filter(type => type.key);
+            document.querySelectorAll('.category-type').forEach(select => {
+                const selected = select.value || select.dataset.selected || '';
+                select.innerHTML = types.map(type => '<option value="' + escapeHtml(type.key) + '">' + escapeHtml(type.label || type.key) + '</option>').join('');
+                if (types.some(type => type.key === selected)) {
+                    select.value = selected;
+                } else if (selected) {
+                    select.insertAdjacentHTML('afterbegin', '<option value="' + escapeHtml(selected) + '">Missing type: ' + escapeHtml(selected) + '</option>');
+                    select.value = selected;
+                }
+                delete select.dataset.selected;
+            });
+        }
+        document.getElementById('add-type').addEventListener('click', () => {
+            document.getElementById('type-rows').insertAdjacentHTML('beforeend', document.getElementById('type-template').innerHTML.replaceAll('__INDEX__', typeIndex++));
+            refreshTypeOptions();
+        });
+        document.getElementById('add-category').addEventListener('click', () => {
+            document.getElementById('category-rows').insertAdjacentHTML('beforeend', document.getElementById('category-template').innerHTML.replaceAll('__INDEX__', categoryIndex++));
+            refreshTypeOptions();
+        });
+        document.addEventListener('click', event => {
+            if (!event.target.classList.contains('remove-row')) return;
+            event.target.closest('.type-row, .category-row').remove();
+            refreshTypeOptions();
+        });
+        document.addEventListener('input', event => {
+            if (event.target.classList.contains('type-key') || event.target.matches('.type-row input[name$="[label]"]')) refreshTypeOptions();
+        });
+        refreshTypeOptions();
+    </script>
 </body>
 </html>

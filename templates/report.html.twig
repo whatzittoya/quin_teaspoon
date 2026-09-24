@@ -115,16 +115,13 @@
             </div>
             <div class="flex items-center gap-2">
                 <select id="category-select" class="bg-white border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-medium px-3 py-2 rounded-lg transition shadow-sm">
-                    <optgroup label="Sales">
-                        {% for c in categories|filter(c => c.type == 'sales') %}
+                    {% for type in types %}
+                    <optgroup label="{{ type.label }}">
+                        {% for c in categories|filter(c => c.type == type.key) %}
                         <option value="{{ c.key }}" {% if category.key == c.key %}selected{% endif %}>{{ c.label }}</option>
                         {% endfor %}
                     </optgroup>
-                    <optgroup label="No sales">
-                        {% for c in categories|filter(c => c.type == 'non_sales') %}
-                        <option value="{{ c.key }}" {% if category.key == c.key %}selected{% endif %}>{{ c.label }}</option>
-                        {% endfor %}
-                    </optgroup>
+                    {% endfor %}
                 </select>
                 <a id="download-csv-btn" href="{{ base_path }}/api/sales/download?date={{ date }}&category={{ category.key }}" class="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 text-sm font-medium px-4 py-2 rounded-lg transition shadow-sm">
                     <i class="fa-solid fa-download text-xs"></i> Download CSV

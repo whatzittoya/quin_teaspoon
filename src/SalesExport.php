@@ -53,15 +53,20 @@ final class SalesExport
             array_keys(array_values($category['departments']))
         ));
 
-        if (SalesCategories::isNonSales($category)) {
+        $invoiceMode = SalesCategories::invoiceMode($category);
+        if ($invoiceMode === 'missing') {
             // No invoice at all, or an invoice_id pointing at a row that no longer exists.
             $invoiceJoin  = 'LEFT JOIN tbl_invoices inv_row ON s.invoice_id = inv_row.id';
             $invoiceWhere = 'AND (s.invoice_id IS NULL OR inv_row.id IS NULL)';
             $orderBy      = 'ORDER BY sl.id';
-        } else {
+        } elseif ($invoiceMode === 'required') {
             $invoiceJoin  = 'JOIN tbl_invoices inv ON s.invoice_id = inv.id';
             $invoiceWhere = 'AND s.invoice_id IS NOT NULL';
             $orderBy      = 'ORDER BY s.invoice_id, sl.id';
+        } else {
+            $invoiceJoin  = '';
+            $invoiceWhere = '';
+            $orderBy      = 'ORDER BY sl.id';
         }
 
         return "
@@ -104,7 +109,8 @@ final class SalesExport
 
     public static function buildCsv(array $rows, array $category): string
     {
-        $nonSales = SalesCategories::isNonSales($category);
+        $zeroPrices = (bool) (SalesCategories::typeFor($category)['zero_prices'] ?? false);
+        $dateFormat = self::csvDateFormat();
         $lines = [self::CSV_HEADER];
 
         foreach ($rows as $row) {
@@ -112,11 +118,11 @@ final class SalesExport
             $unitPrice = (float) ($row['unitPrice'] ?? 0);
             $discount  = (float) ($row['discountAmount'] ?? 0);
 
-            $unitPriceExcl = $nonSales ? 0.00 : round($unitPrice, 2);
-            $amountExcl    = $nonSales ? 0.00 : round($qty * $unitPrice - $discount, 2);
+            $unitPriceExcl = $zeroPrices ? 0.00 : round($unitPrice, 2);
+            $amountExcl    = $zeroPrices ? 0.00 : round($qty * $unitPrice - $discount, 2);
 
             $lines[] = implode(';', [
-                date('d/m/Y', strtotime($row['date'])),
+                date($dateFormat, strtotime($row['date'])),
                 date('H:i:s', strtotime($row['date'])),
                 str_replace(';', '', $row['item_code'] ?? ''),
                 str_replace(';', '', $row['description'] ?? ''),
@@ -132,28 +138,34 @@ final class SalesExport
         return implode("\n", $lines) . "\n";
     }
 
-    /**
-     * Non-sales keeps the historical nosalesYYMMDD.csv name in every "compl"
-     * folder — the folder is what distinguishes them on the server.
-     * $suffix adds the random token used for uploaded (not downloaded) files.
-     */
+    /** Build the filename using the selected type's daily or unique rule. */
     public static function csvFilename(string $date, array $category, string $suffix = ''): string
     {
-        if (SalesCategories::isNonSales($category)) {
-            return 'nosales' . date('ymd', strtotime($date . ' 12:00:00')) . '.csv';
+        $type = SalesCategories::typeFor($category);
+        $prefix = $type['filename_prefix'];
+        if ($type['filename_mode'] === 'daily') {
+            return $prefix . date('ymd', strtotime($date . ' 12:00:00')) . '.csv';
         }
         $suffix = $suffix !== '' ? '-' . $suffix : '';
-        return "sales-{$date}-{$category['key']}{$suffix}.csv";
+        return "{$prefix}-{$date}-{$category['key']}{$suffix}.csv";
     }
 
     /** Local filename, kept unique per category so exports/ doesn't collide. */
     public static function localFilename(string $date, array $category, string $suffix = ''): string
     {
-        if (!SalesCategories::isNonSales($category)) {
+        $type = SalesCategories::typeFor($category);
+        if ($type['filename_mode'] !== 'daily') {
             return self::csvFilename($date, $category, $suffix);
         }
         $suffix = $suffix !== '' ? '-' . $suffix : '';
-        return "nosales-{$date}-{$category['key']}{$suffix}.csv";
+        return "{$type['filename_prefix']}-{$date}-{$category['key']}{$suffix}.csv";
+    }
+
+    /** CSV output must not depend on the Windows regional date setting. */
+    public static function csvDateFormat(): string
+    {
+        $format = (string) ($_ENV['CSV_DATE_FORMAT'] ?? 'd/m/Y');
+        return in_array($format, ['d/m/Y', 'm/d/Y', 'Y-m-d'], true) ? $format : 'd/m/Y';
     }
 
     public static function randomToken(): string

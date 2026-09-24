@@ -201,6 +201,7 @@
         var basePath = '{{ base_path }}';
         var today = '{{ today }}';
         var categories = [];
+        var exportTypes = [];
 
         function setToggleState(enabled) {
             var $btn = $('#scheduler-toggle');
@@ -348,7 +349,7 @@
         }
 
         function menuHeading(text) {
-            return '<div class="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">' + text + '</div>';
+            return '<div class="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">' + escapeHtml(text) + '</div>';
         }
 
         // CSV menu: one download link per category, split Sales / No sales.
@@ -357,10 +358,10 @@
             var html = '';
             var number = 1;
 
-            ['sales', 'non_sales'].forEach(function (type) {
-                var group = categories.filter(function (c) { return c.type === type; });
+            exportTypes.forEach(function (type) {
+                var group = categories.filter(function (c) { return c.type === type.key; });
                 if (!group.length) return;
-                html += menuHeading(type === 'sales' ? 'Sales' : 'No sales');
+                html += menuHeading(type.label);
                 group.forEach(function (c) {
                     html += '<a class="block px-3 py-1.5 text-xs text-slate-700 hover:bg-sky-50" ' +
                         'href="' + base + encodeURIComponent(c.key) + '" ' +
@@ -390,10 +391,10 @@
                 : '<button type="button" disabled class="block w-full text-left px-3 py-2 text-xs text-slate-400 cursor-not-allowed bg-slate-50 border-0">All categories <i class="fa-solid fa-check text-green-600 ml-1"></i></button>';
             html += '<div class="my-1 border-t border-slate-100"></div>';
 
-            ['sales', 'non_sales'].forEach(function (type) {
-                var group = categories.filter(function (c) { return c.type === type; });
+            exportTypes.forEach(function (type) {
+                var group = categories.filter(function (c) { return c.type === type.key; });
                 if (!group.length) return;
-                html += menuHeading(type === 'sales' ? 'Sales' : 'No sales');
+                html += menuHeading(type.label);
                 group.forEach(function (c) {
                     html += done[c.key]
                         ? '<button type="button" disabled class="block w-full text-left px-3 py-1.5 text-xs text-slate-400 cursor-not-allowed bg-slate-50 border-0">' +
@@ -424,6 +425,7 @@
                     url: basePath + '/api/sales',
                     dataSrc: function (json) {
                         categories = json.categories || [];
+                        exportTypes = json.types || [];
                         return json.data || [];
                     },
                 },

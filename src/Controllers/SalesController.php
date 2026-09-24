@@ -62,6 +62,7 @@ class SalesController
         return $this->json($response, [
             'data'       => $data,
             'categories' => SalesCategories::all(),
+            'types'      => SalesCategories::types(),
         ]);
     }
 
@@ -114,6 +115,7 @@ class SalesController
             'date' => $date,
             'category' => $category,
             'categories' => SalesCategories::all(),
+            'types' => SalesCategories::types(),
         ]);
     }
 
@@ -258,12 +260,11 @@ class SalesController
         return $this->json($response, $result);
     }
 
-    /** "Beverage" for sales, "Beverage (no sales)" for the compl categories. */
+    /** Include the configured type so duplicate category labels stay clear. */
     private function categoryLabel(array $category): string
     {
-        return SalesCategories::isNonSales($category)
-            ? $category['label'] . ' (no sales)'
-            : $category['label'];
+        $type = SalesCategories::typeFor($category);
+        return $category['label'] . ' (' . strtolower($type['label']) . ')';
     }
 
     private function requestedCategory(Request $request): ?array
