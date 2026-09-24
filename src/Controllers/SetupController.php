@@ -174,6 +174,19 @@ final class SetupController
 
     private function createUploadTable(PDO $db): void
     {
+        $exists = $db->query(
+            "SELECT 1
+             FROM information_schema.tables
+             WHERE table_schema = DATABASE()
+               AND table_name = 'tbl_trobex_uploads'
+               AND table_type = 'BASE TABLE'
+             LIMIT 1"
+        )->fetchColumn();
+
+        if ($exists !== false) {
+            return;
+        }
+
         $db->exec(
             'CREATE TABLE IF NOT EXISTS tbl_trobex_uploads (
                 id BIGINT NOT NULL AUTO_INCREMENT,
