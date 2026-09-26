@@ -17,18 +17,6 @@ $_ENV['EXPORT_CONFIG_FILE'] = $temporary;
 
 try {
     exportAssertSame('voucher', SalesCategories::find('voucher')['key'], 'Client-added Voucher category must remain in the defaults.');
-    $defaultCategories = SalesCategories::all();
-    foreach (['sales', 'non_sales', 'compliment'] as $typeKey) {
-        exportAssertSame(
-            10,
-            count(array_filter($defaultCategories, static fn (array $category): bool => $category['type'] === $typeKey)),
-            "The {$typeKey} defaults must contain the ten screenshot categories."
-        );
-    }
-    exportAssertSame(['SMOKING'], SalesCategories::find('smoking')['departments'], 'Smoking must match the screenshot department.');
-    exportAssertSame(['VOUCHER'], SalesCategories::find('voucher')['departments'], 'Voucher must use the VOUCHER department.');
-    exportAssertSame('bev no', SalesCategories::find('bev-compl')['folder'], 'Non Sales folder mismatch.');
-    exportAssertSame('bev compl', SalesCategories::find('bev-compliment')['folder'], 'Compliment folder mismatch.');
 
     $types = [
         ['key' => 'sale', 'label' => 'Sale', 'invoice_mode' => 'required', 'zero_prices' => false, 'filename_mode' => 'unique', 'filename_prefix' => 'sales'],

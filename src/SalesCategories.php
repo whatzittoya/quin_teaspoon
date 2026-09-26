@@ -7,12 +7,10 @@ final class SalesCategories
 {
     public const TYPE_SALES = 'sales';
     public const TYPE_NON_SALES = 'non_sales';
-    public const TYPE_COMPLIMENT = 'compliment';
 
     private const DEFAULT_TYPES = [
         ['key' => self::TYPE_SALES, 'label' => 'Sales', 'invoice_mode' => 'required', 'zero_prices' => false, 'filename_mode' => 'unique', 'filename_prefix' => 'sales'],
-        ['key' => self::TYPE_NON_SALES, 'label' => 'Non Sales', 'invoice_mode' => 'missing', 'zero_prices' => true, 'filename_mode' => 'daily', 'filename_prefix' => 'nosales'],
-        ['key' => self::TYPE_COMPLIMENT, 'label' => 'Compliment', 'invoice_mode' => 'required', 'zero_prices' => false, 'filename_mode' => 'unique', 'filename_prefix' => 'compliment'],
+        ['key' => self::TYPE_NON_SALES, 'label' => 'No sales', 'invoice_mode' => 'missing', 'zero_prices' => true, 'filename_mode' => 'daily', 'filename_prefix' => 'nosales'],
     ];
 
     private const DEFAULT_CATEGORIES = [
@@ -20,34 +18,21 @@ final class SalesCategories
         ['key' => 'bev-attika',       'label' => 'Beverage Attika', 'type' => self::TYPE_SALES,     'departments' => ['BEVERAGE ATTIKA'],                        'folder' => 'bev attika'],
         ['key' => 'food',             'label' => 'Food',            'type' => self::TYPE_SALES,     'departments' => ['FOOD'],                                   'folder' => 'food'],
         ['key' => 'ticket',           'label' => 'Ticket',          'type' => self::TYPE_SALES,     'departments' => ['TICKET'],                                 'folder' => 'ticket'],
-        ['key' => 'smoking',          'label' => 'Smoking',         'type' => self::TYPE_SALES,     'departments' => ['SMOKING'],                                'folder' => 'smoking'],
+        ['key' => 'smoking',          'label' => 'Smoking',         'type' => self::TYPE_SALES,     'departments' => ['SMOKING', 'CIGAR & CIGARETTE', 'SHISHA'], 'folder' => 'smoking'],
         ['key' => 'other',            'label' => 'Other',           'type' => self::TYPE_SALES,     'departments' => ['OTHER'],                                  'folder' => 'other'],
+        ['key' => 'bev-compl',        'label' => 'Beverage',        'type' => self::TYPE_NON_SALES, 'departments' => ['BEVERAGE'],                               'folder' => 'bev compl'],
+        ['key' => 'event-compl',      'label' => 'Event',           'type' => self::TYPE_NON_SALES, 'departments' => ['EVENT'],                                  'folder' => 'event compl'],
+        ['key' => 'bev-attika-compl', 'label' => 'Beverage Attika', 'type' => self::TYPE_NON_SALES, 'departments' => ['BEVERAGE ATTIKA'],                        'folder' => 'bev attika compl'],
+        ['key' => 'food-compl',       'label' => 'Food',            'type' => self::TYPE_NON_SALES, 'departments' => ['FOOD'],                                   'folder' => 'food compl'],
+        ['key' => 'ticket-compl',     'label' => 'Ticket',          'type' => self::TYPE_NON_SALES, 'departments' => ['TICKET'],                                 'folder' => 'ticket compl'],
+        ['key' => 'smoking-compl',    'label' => 'Smoking',         'type' => self::TYPE_NON_SALES, 'departments' => ['SMOKING'],                                'folder' => 'smoking compl'],
+        ['key' => 'other-compl',      'label' => 'Other',           'type' => self::TYPE_NON_SALES, 'departments' => ['OTHER'],                                  'folder' => 'other compl'],
+        ['key' => 'promo-compl',      'label' => 'Promo',           'type' => self::TYPE_NON_SALES, 'departments' => ['PROMO'],                                  'folder' => 'promo compl'],
+        ['key' => 'partner-compl',    'label' => 'Partner',         'type' => self::TYPE_NON_SALES, 'departments' => ['PARTNER'],                                'folder' => 'partner compl'],
         ['key' => 'promo',            'label' => 'Promo',           'type' => self::TYPE_SALES,     'departments' => ['PROMO'],                                  'folder' => 'promo'],
         ['key' => 'partner',          'label' => 'Partner',         'type' => self::TYPE_SALES,     'departments' => ['PARTNER'],                                'folder' => 'partner'],
         ['key' => 'event',            'label' => 'Event',           'type' => self::TYPE_SALES,     'departments' => ['EVENT'],                                  'folder' => 'event'],
-        ['key' => 'voucher',          'label' => 'Voucher',         'type' => self::TYPE_SALES,     'departments' => ['VOUCHER'],                                'folder' => 'voucher'],
-
-        ['key' => 'bev-compl',        'label' => 'Beverage',        'type' => self::TYPE_NON_SALES, 'departments' => ['BEVERAGE'],                               'folder' => 'bev no'],
-        ['key' => 'bev-attika-compl', 'label' => 'Beverage Attika', 'type' => self::TYPE_NON_SALES, 'departments' => ['BEVERAGE ATTIKA'],                        'folder' => 'bev attika no'],
-        ['key' => 'food-compl',       'label' => 'Food',            'type' => self::TYPE_NON_SALES, 'departments' => ['FOOD'],                                   'folder' => 'food no'],
-        ['key' => 'ticket-compl',     'label' => 'Ticket',          'type' => self::TYPE_NON_SALES, 'departments' => ['TICKET'],                                 'folder' => 'ticket no'],
-        ['key' => 'smoking-compl',    'label' => 'Smoking',         'type' => self::TYPE_NON_SALES, 'departments' => ['SMOKING'],                                'folder' => 'smoking no'],
-        ['key' => 'other-compl',      'label' => 'Other',           'type' => self::TYPE_NON_SALES, 'departments' => ['OTHER'],                                  'folder' => 'other no'],
-        ['key' => 'promo-compl',      'label' => 'Promo',           'type' => self::TYPE_NON_SALES, 'departments' => ['PROMO'],                                  'folder' => 'promo no'],
-        ['key' => 'partner-compl',    'label' => 'Partner',         'type' => self::TYPE_NON_SALES, 'departments' => ['PARTNER'],                                'folder' => 'partner no'],
-        ['key' => 'event-compl',      'label' => 'Event',           'type' => self::TYPE_NON_SALES, 'departments' => ['EVENT'],                                  'folder' => 'event no'],
-        ['key' => 'voucher-compl',    'label' => 'Voucher',         'type' => self::TYPE_NON_SALES, 'departments' => ['VOUCHER'],                                'folder' => 'voucher no'],
-
-        ['key' => 'bev-compliment',        'label' => 'Beverage',        'type' => self::TYPE_COMPLIMENT, 'departments' => ['BEVERAGE'],        'folder' => 'bev compl'],
-        ['key' => 'bev-attika-compliment', 'label' => 'Beverage Attika', 'type' => self::TYPE_COMPLIMENT, 'departments' => ['BEVERAGE ATTIKA'], 'folder' => 'bev attika compl'],
-        ['key' => 'food-compliment',       'label' => 'Food',            'type' => self::TYPE_COMPLIMENT, 'departments' => ['FOOD'],            'folder' => 'food compl'],
-        ['key' => 'ticket-compliment',     'label' => 'Ticket',          'type' => self::TYPE_COMPLIMENT, 'departments' => ['TICKET'],          'folder' => 'ticket compl'],
-        ['key' => 'smoking-compliment',    'label' => 'Smoking',         'type' => self::TYPE_COMPLIMENT, 'departments' => ['SMOKING'],         'folder' => 'smoking compl'],
-        ['key' => 'other-compliment',      'label' => 'Other',           'type' => self::TYPE_COMPLIMENT, 'departments' => ['OTHER'],           'folder' => 'other compl'],
-        ['key' => 'promo-compliment',      'label' => 'Promo',           'type' => self::TYPE_COMPLIMENT, 'departments' => ['PROMO'],           'folder' => 'promo compl'],
-        ['key' => 'partner-compliment',    'label' => 'Partner',         'type' => self::TYPE_COMPLIMENT, 'departments' => ['PARTNER'],         'folder' => 'partner compl'],
-        ['key' => 'event-compliment',      'label' => 'Event',           'type' => self::TYPE_COMPLIMENT, 'departments' => ['EVENT'],           'folder' => 'event compl'],
-        ['key' => 'voucher-compliment',    'label' => 'Voucher',         'type' => self::TYPE_COMPLIMENT, 'departments' => ['VOUCHER'],         'folder' => 'voucher compl'],
+        ['key' => 'voucher',          'label' => 'Voucher',         'type' => self::TYPE_SALES,     'departments' => ['TICKET'],                                 'folder' => 'voucher'],
     ];
 
     public static function types(): array
