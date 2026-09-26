@@ -82,18 +82,33 @@
                     <div><h2 class="section-title">Categories</h2><p class="section-help mb-0">Departments are comma-separated. Leave source database blank to inherit the default database.</p></div>
                     <button type="button" id="add-category" class="add-button">+ Add category</button>
                 </div>
-                <div id="category-rows" class="space-y-3">
-                    {% for c in form.categories %}
-                    <div class="category-row rounded-xl border border-slate-200 bg-white shadow-sm p-4 grid grid-cols-1 md:grid-cols-12 gap-3">
-                        <label class="md:col-span-2"><span class="mini-label">Key</span><input required name="categories[{{ loop.index0 }}][key]" value="{{ c.key }}" class="field" placeholder="bev-compl"></label>
-                        <label class="md:col-span-2"><span class="mini-label">Label</span><input required name="categories[{{ loop.index0 }}][label]" value="{{ c.label }}" class="field" placeholder="Beverage"></label>
-                        <label class="md:col-span-2"><span class="mini-label">Type</span><select name="categories[{{ loop.index0 }}][type]" data-selected="{{ c.type }}" class="field category-type"></select></label>
-                        <label class="md:col-span-3"><span class="mini-label">Departments</span><input required name="categories[{{ loop.index0 }}][departments]" value="{{ c.departments_text ?? (c.departments is iterable ? c.departments|join(', ') : c.departments) }}" class="field" placeholder="BEVERAGE, EVENT"></label>
-                        <label class="md:col-span-2"><span class="mini-label">SFTP folder</span><input required name="categories[{{ loop.index0 }}][folder]" value="{{ c.folder }}" class="field" placeholder="bev compl"></label>
-                        <div class="md:col-span-1 flex items-end justify-end pb-2"><button type="button" class="remove-row text-xs font-semibold text-red-500 hover:text-red-700">Remove</button></div>
-                        <label class="md:col-span-12"><span class="mini-label">Source database override</span><input name="categories[{{ loop.index0 }}][database]" value="{{ c.database ?? '' }}" class="field" placeholder="Use default database"></label>
-                    </div>
-                    {% endfor %}
+                <div class="category-table-wrap">
+                    <table class="category-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Label</th>
+                                <th>Type</th>
+                                <th>Departments</th>
+                                <th>SFTP folder</th>
+                                <th>Source database</th>
+                                <th><span class="sr-only">Actions</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="category-rows">
+                            {% for c in form.categories %}
+                            <tr class="category-row">
+                                <td><input aria-label="Category key" required name="categories[{{ loop.index0 }}][key]" value="{{ c.key }}" class="field" placeholder="bev-compl"></td>
+                                <td><input aria-label="Category label" required name="categories[{{ loop.index0 }}][label]" value="{{ c.label }}" class="field" placeholder="Beverage"></td>
+                                <td><select aria-label="Category type" name="categories[{{ loop.index0 }}][type]" data-selected="{{ c.type }}" class="field category-type"></select></td>
+                                <td><input aria-label="Departments" required name="categories[{{ loop.index0 }}][departments]" value="{{ c.departments_text ?? (c.departments is iterable ? c.departments|join(', ') : c.departments) }}" class="field" placeholder="BEVERAGE, EVENT"></td>
+                                <td><input aria-label="SFTP folder" required name="categories[{{ loop.index0 }}][folder]" value="{{ c.folder }}" class="field" placeholder="bev compl"></td>
+                                <td><input aria-label="Source database override" name="categories[{{ loop.index0 }}][database]" value="{{ c.database ?? '' }}" class="field" placeholder="Default database"></td>
+                                <td class="action-cell"><button type="button" class="remove-row table-remove" aria-label="Remove {{ c.label }} category" title="Remove category">Remove</button></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
@@ -113,7 +128,7 @@
     </div>
 
     <template id="type-template"><div class="type-row rounded-xl border border-slate-200 bg-slate-50 p-4 grid grid-cols-1 md:grid-cols-12 gap-3"><label class="md:col-span-2"><span class="mini-label">Key</span><input required name="types[__INDEX__][key]" class="field type-key" placeholder="compliment"></label><label class="md:col-span-2"><span class="mini-label">Label</span><input required name="types[__INDEX__][label]" class="field" placeholder="Compliment"></label><label class="md:col-span-2"><span class="mini-label">Invoice rule</span><select name="types[__INDEX__][invoice_mode]" class="field"><option value="required">Invoice required</option><option value="missing">No invoice</option><option value="any">Any invoice state</option></select></label><label class="md:col-span-2"><span class="mini-label">Filename</span><select name="types[__INDEX__][filename_mode]" class="field"><option value="unique">Category + token</option><option value="daily">Daily fixed name</option></select></label><label class="md:col-span-2"><span class="mini-label">File prefix</span><input required name="types[__INDEX__][filename_prefix]" class="field" placeholder="compliment"></label><div class="md:col-span-2 flex items-end justify-between gap-2 pb-2"><label class="inline-flex items-center gap-2 text-xs font-medium"><input type="checkbox" name="types[__INDEX__][zero_prices]" value="1" class="accent-sky-600"> Zero prices</label><button type="button" class="remove-row text-xs font-semibold text-red-500">Remove</button></div></div></template>
-    <template id="category-template"><div class="category-row rounded-xl border border-slate-200 bg-white shadow-sm p-4 grid grid-cols-1 md:grid-cols-12 gap-3"><label class="md:col-span-2"><span class="mini-label">Key</span><input required name="categories[__INDEX__][key]" class="field" placeholder="new-category"></label><label class="md:col-span-2"><span class="mini-label">Label</span><input required name="categories[__INDEX__][label]" class="field" placeholder="New category"></label><label class="md:col-span-2"><span class="mini-label">Type</span><select name="categories[__INDEX__][type]" class="field category-type"></select></label><label class="md:col-span-3"><span class="mini-label">Departments</span><input required name="categories[__INDEX__][departments]" class="field" placeholder="BEVERAGE, EVENT"></label><label class="md:col-span-2"><span class="mini-label">SFTP folder</span><input required name="categories[__INDEX__][folder]" class="field" placeholder="new folder"></label><div class="md:col-span-1 flex items-end justify-end pb-2"><button type="button" class="remove-row text-xs font-semibold text-red-500">Remove</button></div><label class="md:col-span-12"><span class="mini-label">Source database override</span><input name="categories[__INDEX__][database]" class="field" placeholder="Use default database"></label></div></template>
+    <template id="category-template"><tr class="category-row"><td><input aria-label="Category key" required name="categories[__INDEX__][key]" class="field" placeholder="new-category"></td><td><input aria-label="Category label" required name="categories[__INDEX__][label]" class="field" placeholder="New category"></td><td><select aria-label="Category type" name="categories[__INDEX__][type]" class="field category-type"></select></td><td><input aria-label="Departments" required name="categories[__INDEX__][departments]" class="field" placeholder="BEVERAGE, EVENT"></td><td><input aria-label="SFTP folder" required name="categories[__INDEX__][folder]" class="field" placeholder="new folder"></td><td><input aria-label="Source database override" name="categories[__INDEX__][database]" class="field" placeholder="Default database"></td><td class="action-cell"><button type="button" class="remove-row table-remove" aria-label="Remove category" title="Remove category">Remove</button></td></tr></template>
 
     <style>
         .card { background: white; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,.04); padding: 1.5rem; }
@@ -123,6 +138,25 @@
         .notice { margin-bottom: 1.25rem; border-width: 1px; border-radius: .75rem; padding: .75rem 1rem; font-size: .875rem; }
         .add-button { border: 1px solid #bae6fd; background: #f0f9ff; color: #0369a1; border-radius: .75rem; padding: .55rem .9rem; font-size: .8rem; font-weight: 600; white-space: nowrap; }
         .add-button:hover { background: #e0f2fe; }
+        .category-table-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: .75rem; background: white; }
+        .category-table { width: 100%; min-width: 1080px; table-layout: fixed; border-collapse: collapse; }
+        .category-table th { padding: .6rem .5rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: .7rem; font-weight: 600; text-align: left; white-space: nowrap; }
+        .category-table th:nth-child(1) { width: 13%; }
+        .category-table th:nth-child(2) { width: 14%; }
+        .category-table th:nth-child(3) { width: 13%; }
+        .category-table th:nth-child(4) { width: 20%; }
+        .category-table th:nth-child(5) { width: 15%; }
+        .category-table th:nth-child(6) { width: 19%; }
+        .category-table th:nth-child(7) { width: 6%; }
+        .category-table td { padding: .42rem .35rem; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .category-table tbody tr:last-child td { border-bottom: 0; }
+        .category-table tbody tr:focus-within { background: #f8fcff; }
+        .category-table .field { min-height: 2.35rem; border-radius: .5rem; padding: .45rem .6rem; font-size: .78rem; background: white; }
+        .category-table .field::placeholder { color: #a8b3c2; }
+        .category-table .action-cell { text-align: center; }
+        .table-remove { color: #ef4444; font-size: .7rem; font-weight: 600; }
+        .table-remove:hover { color: #b91c1c; text-decoration: underline; }
+        .table-remove:focus-visible { outline: 2px solid #fca5a5; outline-offset: 3px; border-radius: .2rem; }
     </style>
     <script>
         let typeIndex = {{ form.types|length }};
